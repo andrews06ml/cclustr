@@ -6,8 +6,15 @@ Authors@R:
 Description: What the package does (one paragraph).
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
+URL: https://github.com/andrews06ml/cclustr
+BugReports: https://github.com/andrews06ml/cclustr/issues
+Imports: 
+    cluster,
+    e1071,
+    fpc,
+    mclust,
+    mice,
+    viridisLite
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-URL: https://github.com/andrews06ml/cclustr
-BugReports: https://github.com/andrews06ml/cclustr/issues

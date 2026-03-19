@@ -127,12 +127,12 @@
 #'                                             ch = 1, db = 1, dunn = 1))
 #' }
 #'
-#'#' @references
+#' @references
 #' Pihur, V., Datta, S., & Datta, S. (2007). Weighted rank aggregation
 #' of cluster validation measures: a Monte Carlo cross-entropy approach.
 #' \emph{Bioinformatics}, \strong{23}(13), 1607–1615.
 #' \doi{10.1093/bioinformatics/btm158}
-#' 
+#'
 #' @seealso \code{\link{validate_clustering}}, \code{\link{consensus_clustering}},
 #'   \code{\link{plot_validation_metrics}}
 #'
@@ -143,9 +143,9 @@ choose_best_clustering <- function(validation_table,
                                    prefer_stability = NULL,
                                    tie_breaker      = c("silhouette", "pac", "dunn", "ch", "db",
                                                         "ari_between", "ari_consensus")) {
-  
+
   tie_breaker <- match.arg(tie_breaker)
-  
+
   # ---- required columns
   req  <- c("k", "pac", "silhouette_mean",
             "ari_mean_between_imputations", "ari_consensus_mean",
@@ -154,7 +154,7 @@ choose_best_clustering <- function(validation_table,
   if (length(miss) > 0) {
     stop(paste0("validation_table is missing: ", paste(miss, collapse = ", ")))
   }
-  
+
   # ---- default weights
   if (is.null(weights)) {
     if (isTRUE(prefer_stability)) {
@@ -162,13 +162,13 @@ choose_best_clustering <- function(validation_table,
       weights <- c(pac = 2, silhouette = 1.5,
                    ari_between = 2, ari_consensus = 2,
                    ch = 1, db = 1, dunn = 1)
-      
+
     } else if (isFALSE(prefer_stability)) {
       message("Weighting strategy: compactness-focused")
       weights <- c(pac = 1, silhouette = 2,
                    ari_between = 1, ari_consensus = 1,
                    ch = 2, db = 2, dunn = 2)
-      
+
     } else {
       message("Weighting strategy: equal weights")
       weights <- c(pac = 1, silhouette = 1,
@@ -176,15 +176,15 @@ choose_best_clustering <- function(validation_table,
                    ch = 1, db = 1, dunn = 1)
     }
   }
-  
+
   .rank_best1 <- function(x, higher_is_better = TRUE) {
     if (all(is.na(x))) return(rep(NA_real_, length(x)))
     if (higher_is_better) rank(-x, ties.method = "average", na.last = "keep")
     else                  rank( x, ties.method = "average", na.last = "keep")
   }
-  
+
   vt <- validation_table
-  
+
   r_pac  <- .rank_best1(vt$pac,                          higher_is_better = FALSE)
   r_sil  <- .rank_best1(vt$silhouette_mean,              higher_is_better = TRUE)
   r_ab   <- .rank_best1(vt$ari_mean_between_imputations, higher_is_better = TRUE)
@@ -192,7 +192,7 @@ choose_best_clustering <- function(validation_table,
   r_ch   <- .rank_best1(vt$calinski_harabasz_mean,       higher_is_better = TRUE)
   r_db   <- .rank_best1(vt$davies_bouldin_mean,          higher_is_better = FALSE)
   r_dunn <- .rank_best1(vt$dunn_index,                   higher_is_better = TRUE)
-  
+
   score <- numeric(nrow(vt))
   for (i in seq_len(nrow(vt))) {
     vals <- c(pac           = r_pac[i],
@@ -209,7 +209,7 @@ choose_best_clustering <- function(validation_table,
     score[i] <- sum(wi * vals[ok])
   }
   vt$score <- score
-  
+
   tb <- switch(tie_breaker,
                silhouette    =  vt$silhouette_mean,
                pac           = -vt$pac,
@@ -218,10 +218,10 @@ choose_best_clustering <- function(validation_table,
                db            = -vt$davies_bouldin_mean,
                ari_between   =  vt$ari_mean_between_imputations,
                ari_consensus =  vt$ari_consensus_mean)
-  
+
   best_idx <- order(vt$score, -tb, vt$k)[1]
   best_k   <- vt$k[best_idx]
-  
+
   best_obj <- NULL
   if (!is.null(consensus_results$k) && !is.null(consensus_results$consensus)) {
     best_obj <- consensus_results
@@ -234,13 +234,13 @@ choose_best_clustering <- function(validation_table,
       if (length(hit) == 1) best_obj <- consensus_results[[hit]]
     }
   }
-  
+
   if (is.null(best_obj) || is.null(best_obj$consensus) || is.null(best_obj$coassignment)) {
     stop("Could not retrieve consensus labels/coassignment for the selected k from consensus_results.")
   }
-  
+
   message(paste("✓ Best k selected:", best_k))
-  
+
   list(
     best_k                = best_k,
     best_consensus        = best_obj$consensus,
