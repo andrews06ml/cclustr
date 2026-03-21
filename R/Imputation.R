@@ -1,3 +1,6 @@
+# R/Imputation.R
+utils::globalVariables(c(".imp"))
+
 #' Standardize multiple imputation outputs into a unified list
 #'
 #' @description
@@ -57,7 +60,7 @@
 #'
 #' @export
 as_mild_list <- function(x) {
-  
+
   # --------------------------------------------------------
   # Case 1: 'mids' object (output of mice())
   # --------------------------------------------------------
@@ -65,33 +68,33 @@ as_mild_list <- function(x) {
     message("Detected: mice (mids object)")
     imp_list <- mice::complete(x, action = "all")
   }
-  
+
   # --------------------------------------------------------
   # Case 2: mice Long format (output of mice::complete(..., "long"))
   # --------------------------------------------------------
   # Each imputation is identified by the '.imp' column
   else if (is.data.frame(x)) {
-    
+
     if (!(".imp" %in% names(x))) {
       stop("The data.frame does not contain the '.imp' column.")
     }
-    
+
     message("Detected: long-format imputations")
-    
+
     # Identify imputation indices (excluding original incomplete data: .imp = 0)
     imp_ids <- sort(unique(x$.imp))
     imp_ids <- imp_ids[imp_ids != 0]  # delete original data
-    
+
     # Split the long data.frame into a list of completed datasets
     imp_list <- lapply(imp_ids, function(i) {
       subset(x, .imp == i)[ , !(names(x) %in% c(".imp", ".id"))]
     })
-    
+
     # Assign standardized names to each imputed dataset
     names(imp_list) <- paste0("imp", imp_ids)
   }
-  
-  # --------------------------------------------------------  
+
+  # --------------------------------------------------------
   # Case 3: 'amelia' object (output of amelia())
   # --------------------------------------------------------
   else if (inherits(x, "amelia")) {
@@ -100,27 +103,27 @@ as_mild_list <- function(x) {
   }
 
   #-------------------------------------------------------
-  # Case 4: 'imputationList' object (output of mitools()) 
+  # Case 4: 'imputationList' object (output of mitools())
   #-------------------------------------------------------
   else if (inherits(x, "imputationList")) {
     message("Detected: mitools imputationList")
     imp_list <- x$imputations
   }
-  
-  # --------------------------------------------------------  
+
+  # --------------------------------------------------------
   # Case 5: already a list of completed datasets
   # --------------------------------------------------------
   # Each element must be a completed dataset
   else if (is.list(x)) {
-    
+
     if (!all(sapply(x, is.data.frame))) {
       stop("The input list must contain only data.frames.")
     }
-    
+
     imp_list <- x
   }
-  
-  #------------------------------------------------------- 
+
+  #-------------------------------------------------------
   # Case 6: Unsupported input type
   #-------------------------------------------------------
   else {
@@ -136,7 +139,7 @@ as_mild_list <- function(x) {
         )
     )
   }
-  
+
   #-------------------------------------------------------
   # Final consistency checks
   #-------------------------------------------------------
@@ -144,44 +147,44 @@ as_mild_list <- function(x) {
   if (length(unique(sapply(imp_list, nrow))) != 1) {
     stop("All imputations must have the same number of rows.")
   }
-  
+
   # All imputations must have the same number of columns
   if (length(unique(sapply(imp_list, ncol))) != 1) {
     stop("All imputations must have the same number of columns.")
   }
-  
+
   # All imputations must have identical column names
   if (!all(sapply(imp_list, function(df)
     identical(names(df), names(imp_list[[1]]))))) {
     stop("All imputations must have identical column names.")
   }
-  
+
   # Convert to base data.frame (avoid tibble issues)
   imp_list <- lapply(imp_list, as.data.frame)
-  
+
   #-------------------------------------------------------
   # check missing, infinite and zero values
   #-------------------------------------------------------
-  
+
   for (i in seq_along(imp_list)) {
-    
+
     df <- imp_list[[i]]
-    
+
     # 1) Check NA values
     if (anyNA(df)) {
       stop(paste("Imputation", i, "contains NA values."))
     }
-    
+
     # 2) Check NaN values
     if (any(sapply(df, function(col) any(is.nan(col))))) {
       stop(paste("Imputation", i, "contains NaN values."))
     }
-    
+
     # 3) Check Inf values
     if (any(sapply(df, function(col) any(is.infinite(col))))) {
       stop(paste("Imputation", i, "contains Inf values."))
     }
-    
+
     # 4) Check columns fully equal to zero — solo columnas numéricas
     zero_cols <- names(df)[
       sapply(names(df), function(nm) {
@@ -194,10 +197,10 @@ as_mild_list <- function(x) {
                  paste(zero_cols, collapse = ", ")))
     }
   }
-  
+
   message("✓ All datasets passed validation")
   message(paste("✓ Created list of", length(imp_list), "imputed datasets"))
-  
+
   # Return the standardized list of imputed datasets
   return(imp_list)
 }
