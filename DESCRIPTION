@@ -9,11 +9,16 @@ License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
 URL: https://github.com/andrews06ml/cclustr
 BugReports: https://github.com/andrews06ml/cclustr/issues
 Imports: 
+    Amelia,
     cluster,
     e1071,
     fpc,
+    graphics,
+    grDevices,
     mclust,
     mice,
+    mitools,
+    stats,
     viridisLite
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
