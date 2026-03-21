@@ -1,11 +1,13 @@
 Package: cclustr
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+Title: Consensus Clustering for Multiple Imputation
+Version: 0.1.0
+Authors@R: c(
+    person("Anhuar", "Duran Mendoza", email = "aduranm@unbosque.edu.co", role = c("aut", "cre")),
+    person("Andres", "Montenegro Lemus", email = "afmontenegro@unbosque.edu.co", role = "aut"),
+    person("Mario", "Pacheco Lopez", email = "mpachecol@unbosque.edu.co", role = "aut")
+  )
+Description: A library for standardizing, clustering and validating results from multiple imputed datasets.
+License: MIT + file LICENSE
 URL: https://github.com/andrews06ml/cclustr
 BugReports: https://github.com/andrews06ml/cclustr/issues
 Imports: 
