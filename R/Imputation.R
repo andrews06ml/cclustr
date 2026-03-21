@@ -131,11 +131,11 @@ as_mild_list <- function(x) {
       paste(
         "Unsupported imputation format.\n\n",
         "Supported inputs are:\n",
-        "• mids object (mice)\n",
-        "• long-format data.frame from mice::complete(..., 'long')\n",
-        "• amelia object (Amelia package)\n",
-        "• imputationList object (mitools package)\n",
-        "• list of completed data.frames\n\n"
+        " - mids object (mice)\n",
+        " - long-format data.frame from mice::complete(..., 'long')\n",
+        " - amelia object (Amelia package)\n",
+        " - imputationList object (mitools package)\n",
+        " - list of completed data.frames\n\n"
         )
     )
   }
@@ -159,7 +159,7 @@ as_mild_list <- function(x) {
     stop("All imputations must have identical column names.")
   }
 
-  # Convert to base data.frame (avoid tibble issues)
+  # Convert to data.frame (avoid tibble issues)
   imp_list <- lapply(imp_list, as.data.frame)
 
   #-------------------------------------------------------
@@ -185,7 +185,7 @@ as_mild_list <- function(x) {
       stop(paste("Imputation", i, "contains Inf values."))
     }
 
-    # 4) Check columns fully equal to zero — solo columnas numéricas
+    # 4) Check columns fully equal to zero
     zero_cols <- names(df)[
       sapply(names(df), function(nm) {
         col <- df[[nm]]
@@ -198,8 +198,8 @@ as_mild_list <- function(x) {
     }
   }
 
-  message("✓ All datasets passed validation")
-  message(paste("✓ Created list of", length(imp_list), "imputed datasets"))
+  message("All datasets passed validation")
+  message(paste("Created list of", length(imp_list), "imputed datasets"))
 
   # Return the standardized list of imputed datasets
   return(imp_list)

@@ -130,7 +130,7 @@
 #' @references
 #' Pihur, V., Datta, S., & Datta, S. (2007). Weighted rank aggregation
 #' of cluster validation measures: a Monte Carlo cross-entropy approach.
-#' \emph{Bioinformatics}, \strong{23}(13), 1607–1615.
+#' \emph{Bioinformatics}, \strong{23}(13), 1607-1615.
 #' \doi{10.1093/bioinformatics/btm158}
 #'
 #' @seealso \code{\link{validate_clustering}}, \code{\link{consensus_clustering}},
@@ -239,7 +239,7 @@ choose_best_clustering <- function(validation_table,
     stop("Could not retrieve consensus labels/coassignment for the selected k from consensus_results.")
   }
 
-  message(paste("✓ Best k selected:", best_k))
+  message(paste("Best k selected:", best_k))
 
   list(
     best_k                = best_k,

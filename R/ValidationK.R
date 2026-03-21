@@ -42,7 +42,7 @@
 #'
 #' When \code{score} is present (i.e., \code{validation_table} comes from
 #' \code{\link{choose_best_clustering}}), the panel for \code{score} shows
-#' the overall weighted rank aggregation — the \code{k} with the lowest
+#' the overall weighted rank aggregation - the \code{k} with the lowest
 #' score is the recommended solution.
 #'
 #' @examples
@@ -84,45 +84,45 @@ plot_validation_metrics <- function(validation_table,
                                                 "dunn_index",
                                                 "score"),
                                     ask = FALSE) {
-  
+
   if (!is.data.frame(validation_table)) {
     stop("validation_table must be a data.frame.")
   }
-  
+
   if (!("k" %in% names(validation_table))) {
     stop("validation_table must contain column 'k'.")
   }
-  
+
   available_metrics <- intersect(metrics, names(validation_table))
-  
+
   if (length(available_metrics) == 0) {
     stop("None of the requested metrics are available in validation_table.")
   }
-  
+
   old_par <- par(no.readonly = TRUE)
   on.exit(par(old_par))
-  
+
   n         <- length(available_metrics)
   nrow_plot <- ceiling(sqrt(n))
   ncol_plot <- ceiling(n / nrow_plot)
-  
+
   par(mfrow = c(nrow_plot, ncol_plot), ask = ask)
-  
+
   for (metric in available_metrics) {
-    
+
     y <- validation_table[[metric]]
-    
+
     plot(validation_table$k, y,
          type = "b",
          pch  = 19,
-         xlab = "Número de clusters (k)",
+         xlab = "Number of clusters (k)",
          ylab = metric,
          main = gsub("_", " ", metric))
-    
+
     best_idx <- which.max(
       if (metric %in% c("pac", "davies_bouldin_mean", "score")) -y else y
     )
-    
+
     points(validation_table$k[best_idx], y[best_idx],
            pch = 19, cex = 1.4, col = "red")  # <- corregido
   }
