@@ -4,28 +4,46 @@
 #' @description
 #' Applies a clustering algorithm to each completed dataset in a standardized
 #' imputation list (as produced by \code{\link{as_mild_list}}). Supports
-#' hierarchical, k-means, PAM, fuzzy c-means, and model-based clustering.
+#' hierarchical clustering, k-means, PAM, fuzzy c-means, model-based clustering,
+#' k-modes (for categorical data), and k-prototypes (for mixed data).
 #' Accepts a single value of \code{k} or a range, and optionally scales the
 #' data prior to clustering.
 #'
 #' @param imp_list A named list of \code{data.frame} objects, as returned by
 #'   \code{\link{as_mild_list}}. All datasets must have identical dimensions
 #'   and column names.
+#'
 #' @param method A character string specifying the clustering algorithm.
 #'   For hierarchical clustering, accepted values are \code{"ward.D"},
 #'   \code{"ward.D2"}, \code{"single"}, \code{"complete"}, \code{"average"},
 #'   \code{"centroid"}, \code{"median"}, and \code{"mcquitty"}.
-#'   Additional options are \code{"kmeans"}, \code{"pam"}, \code{"fuzzy"},
-#'   and \code{"mclust"}. Default is \code{"ward.D2"}.
+#'   Additional options are:
+#'   \itemize{
+#'     \item \code{"kmeans"}: k-means clustering for numeric data.
+#'     \item \code{"pam"}: partitioning around medoids; supports mixed data
+#'           when used with \code{metric = "gower"}.
+#'     \item \code{"fuzzy"}: fuzzy c-means clustering.
+#'     \item \code{"mclust"}: model-based clustering via Gaussian mixtures.
+#'     \item \code{"kmodes"}: clustering for purely categorical data.
+#'     \item \code{"kprototypes"}: clustering for mixed data (numeric and categorical).
+#'   }
+#'   Default is \code{"ward.D2"}.
+#'
 #' @param k A single integer or an integer vector specifying the number of
 #'   clusters. If a vector is provided, clustering is performed for each
 #'   value of \code{k}.
+#'
 #' @param scale_data Logical. If \code{TRUE} (default), numeric columns are
 #'   standardized to zero mean and unit variance prior to clustering.
+#'   This option is ignored for methods that do not require scaling,
+#'   such as \code{"kmodes"}.
+#'
 #' @param ... Additional arguments passed to the underlying clustering
 #'   function (\code{kmeans}, \code{cluster::pam}, \code{e1071::cmeans},
-#'   or \code{mclust::Mclust}). For \code{method = "pam"}, passing
-#'   \code{metric = "gower"} enables Gower distance for mixed data types.
+#'   \code{mclust::Mclust}, \code{klaR::kmodes}, or
+#'   \code{clustMixType::kproto}).
+#'   For \code{method = "pam"}, passing \code{metric = "gower"} enables
+#'   Gower distance for mixed data types.
 #'
 #' @return
 #' \itemize{
@@ -48,6 +66,18 @@
 #' matrix, making the function suitable for datasets with mixed variable
 #' types (numeric and categorical).
 #'
+#' The choice of clustering method should be consistent with the data types:
+#' \itemize{
+#'   \item Numeric-only datasets: methods such as \code{"kmeans"},
+#'         hierarchical clustering, \code{"fuzzy"}, and \code{"mclust"}.
+#'   \item Categorical datasets: \code{"kmodes"}.
+#'   \item Mixed datasets (numeric and categorical): \code{"pam"} with
+#'         \code{metric = "gower"} or \code{"kprototypes"}.
+#' }
+#'
+#' Character variables are internally converted to factors to ensure
+#' compatibility with categorical and mixed-data clustering methods.
+#'
 #' @examples
 #' \dontrun{
 #' library(mice)
@@ -64,6 +94,12 @@
 #' # PAM with Gower distance (mixed data)
 #' parts_gower <- cluster_imputations(mild, method = "pam", k = 3,
 #'                                    metric = "gower")
+#'
+#' # k-modes for categorical data
+#' parts_kmodes <- cluster_imputations(mild, method = "kmodes", k = 3)
+#'
+#' # k-prototypes for mixed data
+#' parts_kproto <- cluster_imputations(mild, method = "kprototypes", k = 3)
 #' }
 #'
 #' @seealso \code{\link{as_mild_list}}, \code{\link{consensus_clustering}}
@@ -74,7 +110,7 @@ cluster_imputations <- function(imp_list,
                                 k,
                                 scale_data = TRUE,
                                 ...) {
-  
+
   # --------------------------------------------------------
   # Supported methods
   # --------------------------------------------------------
@@ -82,14 +118,22 @@ cluster_imputations <- function(imp_list,
     "ward.D", "ward.D2", "single", "complete",
     "average", "centroid", "median", "mcquitty"
   )
-  
-  if (!(method %in% c(hierarchical_methods, "kmeans", "pam", "fuzzy", "mclust"))) {
+
+  if (!(method %in% c(hierarchical_methods, "kmeans", "pam", "fuzzy", "mclust",
+                      "kmodes", "kprorotypes"))) {
     stop("Unsupported clustering method.")
   }
-  
+
   # --------------------------------------------------------
   # Optional escalation
   # --------------------------------------------------------
+
+  # Disable scaling for methods that do not require it
+  if (method %in% c("kmodes") && scale_data) {
+    warning("Scaling disabled for method = 'kmodes'.")
+    scale_data <- FALSE
+  }
+
   database <- if (scale_data) {
     lapply(imp_list, function(df) {
       num_cols <- sapply(df, is.numeric)
@@ -99,143 +143,189 @@ cluster_imputations <- function(imp_list,
   } else {
     imp_list
   }
-  
+
+  # --------------------------------------------------------
+  # Ensure categorical variables are factors
+  # --------------------------------------------------------
+  database <- lapply(database, function(df) {
+    df[] <- lapply(df, function(col) {
+      if (is.character(col)) as.factor(col) else col
+    })
+    df
+  })
+
   # -------------------------------------------------------
-  # Mixed data validation
+  # Data type detection
   # --------------------------------------------------------
   has_factors <- any(sapply(imp_list[[1]], function(col)
     is.factor(col) || is.character(col)))
-  
-  if (has_factors && !(method == "pam")) {
-    stop(
-      "The dataset contains categorical variables. ",
-      "Use method = 'pam' with metric = 'gower' for mixed data types."
-    )
+
+  all_factors <- all(sapply(imp_list[[1]], function(col)
+    is.factor(col) || is.character(col)))
+
+  numeric_methods <- c(hierarchical_methods, "kmeans", "fuzzy", "mclust")
+  mixed_methods   <- c("pam", "kprototypes")
+  categorical_methods <- c("kmodes")
+
+  # -------------------------------------------------------
+  # Validation by method
+  # --------------------------------------------------------
+  if (has_factors) {
+
+    if (method %in% numeric_methods) {
+      stop(
+        "The dataset contains categorical variables. ",
+        "Use 'pam' (with metric='gower') or 'kprototypes' for mixed data, ",
+        "or 'kmodes' for purely categorical data."
+      )
+    }
+
+  } else {
+
+    if (method %in% categorical_methods) {
+      stop("kmodes requires categorical data.")
+    }
   }
-  
+
   # --------------------------------------------------------
   # Performing clustering for each imputation
   # --------------------------------------------------------
   # --------------------------------------------------------
   # If k is a single value: keep original behavior
   # --------------------------------------------------------
-  
+
   if (length(k) == 1) {
-    
+
     partitions <- lapply(database, function(df) {
-      
+
       if (method %in% hierarchical_methods) {
         d <- dist(df)
         hc <- hclust(d, method = method)
         cutree(hc, k = k)
-        
+
       } else if (method == "kmeans") {
         kmeans(df, centers = k, ...)$cluster
-        
+
       } else if (method == "pam") {
-        
+
         extra_args <- list(...)
-        
+
         if (!is.null(extra_args$metric) && extra_args$metric == "gower") {
-          
+
           # Gower distance for mixed data
           d <- cluster::daisy(df, metric = "gower")
           cluster::pam(d, k, diss = TRUE)$clustering
-          
+
         } else {
-          
+
           # Clasic pam (numeric)
           cluster::pam(df, k, ...)$clustering
         }
-        
+
       } else if (method == "fuzzy") {
-        
+
         e1071::cmeans(df, centers = k, ...)$cluster
-        
+
       } else if (method == "mclust") {
-        
+
         mclust::Mclust(df, G = k, ...)$classification
+
+      } else if (method == "kmodes") {
+
+        klaR::kmodes(df, modes = k, ...)$cluster
+
+      } else if (method == "kprototypes") {
+
+        clustMixType::kproto(df, k = k, ...)$cluster
       }
-      
+
     })
-    
+
     names(partitions) <- names(imp_list)
     return(partitions)
   }
-  
+
   # --------------------------------------------------------
   # If k is a range/vector: compute partitions for each k
   # Return: list by k, each element is the same output as above
   # --------------------------------------------------------
-  
+
   if (length(k) > 1) {
-    
+
     # ------------------------------------------
     # Case 1: Hierarchical (optimized)
     # ------------------------------------------
     if (method %in% hierarchical_methods) {
-      
+
       # Compute dendrogram once per imputation
       hc_list <- lapply(database, function(df) {
         d <- dist(df)
         hclust(d, method = method)
       })
-      
+
       partitions_by_k <- lapply(k, function(k_i) {
-        
+
         partitions <- lapply(hc_list, function(hc) {
           cutree(hc, k = k_i)
         })
-        
+
         names(partitions) <- names(imp_list)
         partitions
       })
-      
+
     } else {
-      
+
       # ------------------------------------------
       # Case 2: Non-hierarchical methods
       # ------------------------------------------
-      
+
       partitions_by_k <- lapply(k, function(k_i) {
-        
+
         partitions <- lapply(database, function(df) {
-          
+
           if (method == "kmeans") {
-            
+
             kmeans(df, centers = k_i, ...)$cluster
-            
+
           } else if (method == "pam") {
-            
+
             extra_args <- list(...)
-            
+
             if (!is.null(extra_args$metric) &&
                 extra_args$metric == "gower") {
-              
+
               d <- cluster::daisy(df, metric = "gower")
               cluster::pam(d, k_i, diss = TRUE)$clustering
-              
+
             } else {
-              
+
               cluster::pam(df, k_i, ...)$clustering
             }
-            
+
           } else if (method == "fuzzy") {
-            
+
             e1071::cmeans(df, centers = k_i, ...)$cluster
-            
+
           } else if (method == "mclust") {
-            
+
             mclust::Mclust(df, G = k_i, ...)$classification
+
+          } else if (method == "kmodes") {
+
+            klaR::kmodes(df, modes = k_i, ...)$cluster
+
+          } else if (method == "kprototypes") {
+
+            clustMixType::kproto(df, k = k_i, ...)$cluster
           }
-          
+
         })
-        
+
         names(partitions) <- names(imp_list)
         partitions
       })
     }
-    
+
     names(partitions_by_k) <- paste0("k", k)
     return(partitions_by_k)
   }
