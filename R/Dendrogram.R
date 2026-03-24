@@ -64,24 +64,67 @@
 #'
 #' @export
 plot_consensus_dendrogram <- function(consensus_result,
+                                      k = NULL,
                                       rect = TRUE,
                                       hang = -1) {
-  
+
+  # --------------------------------------------------------
+  # Detect if multiple k (list of lists)
+  # --------------------------------------------------------
+  is_multi_k <- is.list(consensus_result) &&
+    all(sapply(consensus_result, function(x) is.list(x) && !is.null(x$hclust)))
+
+  # --------------------------------------------------------
+  # k: Available options
+  # --------------------------------------------------------
+  if (is_multi_k && is.null(k)) {
+    available_k <- names(consensus_result)
+    stop(paste0("Multiple k detected. Available options: ",
+                paste(available_k, collapse = ", "),
+                ". Please specify k."))
+  }
+
+  # --------------------------------------------------------
+  # Case 1: multiple k
+  # --------------------------------------------------------
+  if (is_multi_k) {
+
+    if (is.null(k)) {
+      stop("Multiple k detected. Please specify k (e.g., k = 3).")
+    }
+
+    k_name <- paste0("k", k)
+
+    if (!k_name %in% names(consensus_result)) {
+      stop("Requested k not found in consensus_result.")
+    }
+
+    consensus_result <- consensus_result[[k_name]]
+  }
+
+  # --------------------------------------------------------
+  # Validate structure
+  # --------------------------------------------------------
   if (is.null(consensus_result$hclust)) {
     stop("consensus_result must contain 'hclust'.")
   }
-  
+
   if (is.null(consensus_result$k)) {
     stop("consensus_result must contain 'k'.")
   }
-  
+
+  # --------------------------------------------------------
+  # Plot
+  # --------------------------------------------------------
   plot(consensus_result$hclust,
        hang = hang,
-       main = paste("Dendrograma consenso (k =", consensus_result$k, ")"),
+       main = paste("Consensus dendrogram (k =", consensus_result$k, ")"),
        xlab = "",
        sub = "")
-  
+
   if (rect) {
-    rect.hclust(consensus_result$hclust, k = consensus_result$k, border = 2:6)
+    rect.hclust(consensus_result$hclust,
+                k = consensus_result$k,
+                border = 2:6)
   }
 }
