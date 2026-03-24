@@ -4,7 +4,7 @@
 \alias{plot_consensus_dendrogram}
 \title{Plot a consensus clustering dendrogram}
 \usage{
-plot_consensus_dendrogram(consensus_result, rect = TRUE, hang = -1)
+plot_consensus_dendrogram(consensus_result, k = NULL, rect = TRUE, hang = -1)
 }
 \arguments{
 \item{consensus_result}{A named list as returned by

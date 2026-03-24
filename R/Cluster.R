@@ -235,12 +235,12 @@ cluster_imputations <- function(imp_list,
     partitions <- lapply(database, function(df) {
 
       if (method %in% hierarchical_methods) {
-        d <- dist(df)
-        hc <- hclust(d, method = method)
-        cutree(hc, k = k)
+        d <- stats::dist(df)
+        hc <- stats::hclust(d, method = method)
+        stats::cutree(hc, k = k)
 
       } else if (method == "kmeans") {
-        kmeans(df, centers = k, ...)$cluster
+        stats::kmeans(df, centers = k, ...)$cluster
 
       } else if (method == "pam") {
 
@@ -293,14 +293,14 @@ cluster_imputations <- function(imp_list,
 
       # Compute dendrogram once per imputation
       hc_list <- lapply(database, function(df) {
-        d <- dist(df)
-        hclust(d, method = method)
+        d <- stats::dist(df)
+        stats::hclust(d, method = method)
       })
 
       partitions_by_k <- lapply(k, function(k_i) {
 
         partitions <- lapply(hc_list, function(hc) {
-          cutree(hc, k = k_i)
+          stats::cutree(hc, k = k_i)
         })
 
         names(partitions) <- names(imp_list)
@@ -319,7 +319,7 @@ cluster_imputations <- function(imp_list,
 
           if (method == "kmeans") {
 
-            kmeans(df, centers = k_i, ...)$cluster
+            stats::kmeans(df, centers = k_i, ...)$cluster
 
           } else if (method == "pam") {
 

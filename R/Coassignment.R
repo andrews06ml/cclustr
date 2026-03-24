@@ -218,9 +218,9 @@ consensus_clustering <- function(partitions,
     # --------------------------------------------------------
     # Consensus clustering based on dissimilarity
     # --------------------------------------------------------
-    diss <- as.dist(1 - coassignment)
-    hc <- hclust(diss, method = cluster_method)
-    consensus <- cutree(hc, k = k_value)
+    diss <- stats::as.dist(1 - coassignment)
+    hc <- stats::hclust(diss, method = cluster_method)
+    consensus <- stats::cutree(hc, k = k_value)
 
     return(list(
       consensus_method = consensus_method,

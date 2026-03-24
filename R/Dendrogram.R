@@ -12,6 +12,7 @@
 #'   integer specifying the number of clusters).
 #' @param rect Logical. If \code{TRUE} (default), colored rectangles are drawn
 #'   around the clusters via \code{\link[stats]{rect.hclust}}.
+#' @param k Numeric. It is the number of clusters selected for the dendrogram.
 #' @param hang Numeric. The fraction of the plot height by which labels hang
 #'   below the rest of the plot. A negative value (default \code{-1}) causes
 #'   all labels to hang down from zero.

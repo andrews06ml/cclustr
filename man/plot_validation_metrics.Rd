@@ -58,7 +58,7 @@ Original graphical parameters are restored on exit via
 
 When \code{score} is present (i.e., \code{validation_table} comes from
 \code{\link{choose_best_clustering}}), the panel for \code{score} shows
-the overall weighted rank aggregation — the \code{k} with the lowest
+the overall weighted rank aggregation - the \code{k} with the lowest
 score is the recommended solution.
 }
 \examples{

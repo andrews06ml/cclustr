@@ -150,7 +150,7 @@ best4 <- choose_best_clustering(val, cons,
 \references{
 Pihur, V., Datta, S., & Datta, S. (2007). Weighted rank aggregation
 of cluster validation measures: a Monte Carlo cross-entropy approach.
-\emph{Bioinformatics}, \strong{23}(13), 1607–1615.
+\emph{Bioinformatics}, \strong{23}(13), 1607-1615.
 \doi{10.1093/bioinformatics/btm158}
 }
 \seealso{

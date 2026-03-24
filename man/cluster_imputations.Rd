@@ -15,20 +15,33 @@ and column names.}
 For hierarchical clustering, accepted values are \code{"ward.D"},
 \code{"ward.D2"}, \code{"single"}, \code{"complete"}, \code{"average"},
 \code{"centroid"}, \code{"median"}, and \code{"mcquitty"}.
-Additional options are \code{"kmeans"}, \code{"pam"}, \code{"fuzzy"},
-and \code{"mclust"}. Default is \code{"ward.D2"}.}
+Additional options are:
+\itemize{
+\item \code{"kmeans"}: k-means clustering for numeric data.
+\item \code{"pam"}: partitioning around medoids; supports mixed data
+when used with \code{metric = "gower"}.
+\item \code{"fuzzy"}: fuzzy c-means clustering.
+\item \code{"mclust"}: model-based clustering via Gaussian mixtures.
+\item \code{"kmodes"}: clustering for purely categorical data.
+\item \code{"kprototypes"}: clustering for mixed data (numeric and categorical).
+}
+Default is \code{"ward.D2"}.}
 
 \item{k}{A single integer or an integer vector specifying the number of
 clusters. If a vector is provided, clustering is performed for each
 value of \code{k}.}
 
 \item{scale_data}{Logical. If \code{TRUE} (default), numeric columns are
-standardized to zero mean and unit variance prior to clustering.}
+standardized to zero mean and unit variance prior to clustering.
+This option is ignored for methods that do not require scaling,
+such as \code{"kmodes"}.}
 
 \item{...}{Additional arguments passed to the underlying clustering
 function (\code{kmeans}, \code{cluster::pam}, \code{e1071::cmeans},
-or \code{mclust::Mclust}). For \code{method = "pam"}, passing
-\code{metric = "gower"} enables Gower distance for mixed data types.}
+\code{mclust::Mclust}, \code{klaR::kmodes}, or
+\code{clustMixType::kproto}).
+For \code{method = "pam"}, passing \code{metric = "gower"} enables
+Gower distance for mixed data types.}
 }
 \value{
 \itemize{
@@ -44,7 +57,8 @@ named list of cluster assignment vectors, one per imputed dataset.
 \description{
 Applies a clustering algorithm to each completed dataset in a standardized
 imputation list (as produced by \code{\link{as_mild_list}}). Supports
-hierarchical, k-means, PAM, fuzzy c-means, and model-based clustering.
+hierarchical clustering, k-means, PAM, fuzzy c-means, model-based clustering,
+k-modes (for categorical data), and k-prototypes (for mixed data).
 Accepts a single value of \code{k} or a range, and optionally scales the
 data prior to clustering.
 }
@@ -57,6 +71,18 @@ For \code{method = "pam"} with \code{metric = "gower"}, Gower distance
 is computed via \code{cluster::daisy()} and passed as a dissimilarity
 matrix, making the function suitable for datasets with mixed variable
 types (numeric and categorical).
+
+The choice of clustering method should be consistent with the data types:
+\itemize{
+\item Numeric-only datasets: methods such as \code{"kmeans"},
+hierarchical clustering, \code{"fuzzy"}, and \code{"mclust"}.
+\item Categorical datasets: \code{"kmodes"}.
+\item Mixed datasets (numeric and categorical): \code{"pam"} with
+\code{metric = "gower"} or \code{"kprototypes"}.
+}
+
+Character variables are internally converted to factors to ensure
+compatibility with categorical and mixed-data clustering methods.
 }
 \examples{
 \dontrun{
@@ -74,6 +100,12 @@ parts_multi <- cluster_imputations(mild, method = "ward.D2", k = 2:5)
 # PAM with Gower distance (mixed data)
 parts_gower <- cluster_imputations(mild, method = "pam", k = 3,
                                    metric = "gower")
+
+# k-modes for categorical data
+parts_kmodes <- cluster_imputations(mild, method = "kmodes", k = 3)
+
+# k-prototypes for mixed data
+parts_kproto <- cluster_imputations(mild, method = "kprototypes", k = 3)
 }
 
 }
