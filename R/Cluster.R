@@ -110,6 +110,9 @@ cluster_imputations <- function(imp_list,
                                 k,
                                 scale_data = TRUE,
                                 ...) {
+  # Capture user-specified arguments for downstream clustering functions.
+  # These arguments are method-dependent and forwarded internally.
+  extra_args <- list(...)
 
   # --------------------------------------------------------
   # Supported methods
@@ -120,7 +123,7 @@ cluster_imputations <- function(imp_list,
   )
 
   if (!(method %in% c(hierarchical_methods, "kmeans", "pam", "fuzzy", "mclust",
-                      "kmodes", "kprorotypes"))) {
+                      "kmodes", "kprototypes"))) {
     stop("Unsupported clustering method.")
   }
 
@@ -157,11 +160,9 @@ cluster_imputations <- function(imp_list,
   # -------------------------------------------------------
   # Data type detection
   # --------------------------------------------------------
-  has_factors <- any(sapply(imp_list[[1]], function(col)
-    is.factor(col) || is.character(col)))
+  has_factors <- any(sapply(database[[1]], is.factor))
 
-  all_factors <- all(sapply(imp_list[[1]], function(col)
-    is.factor(col) || is.character(col)))
+  all_factors <- all(sapply(database[[1]], is.factor))
 
   numeric_methods <- c(hierarchical_methods, "kmeans", "fuzzy", "mclust")
   mixed_methods   <- c("pam", "kprototypes")
@@ -170,6 +171,17 @@ cluster_imputations <- function(imp_list,
   # -------------------------------------------------------
   # Validation by method
   # --------------------------------------------------------
+  if (all_factors && method == "kprototypes") {
+    warning(
+      "All variables are categorical. Switching to 'kmodes'."
+    )
+    method <- "kmodes"
+  }
+
+  if (method == "kprototypes" && scale_data && !all_factors) {
+    warning("Scaling numeric variables may affect k-prototypes clustering.")
+  }
+
   if (has_factors) {
 
     if (method %in% numeric_methods) {
@@ -185,6 +197,30 @@ cluster_imputations <- function(imp_list,
     if (method %in% categorical_methods) {
       stop("kmodes requires categorical data.")
     }
+  }
+
+  # Warning for mixed data without Gower
+  if (method == "pam" &&
+      has_factors &&
+      (is.null(extra_args$metric) || extra_args$metric != "gower")) {
+
+    warning(
+      "Mixed data detected. Consider using metric = 'gower' ",
+      "or method = 'kprototypes' for mixed data."
+    )
+  }
+
+  # Validate the number of clusters (k):
+  # Ensures meaningful clustering by enforcing 2 <= k < n
+
+  if (any(k < 2)) {
+    stop("k must be greater than or equal to 2.")
+  }
+
+  n_obs <- nrow(database[[1]])
+
+  if (any(k >= n_obs)) {
+    stop("k must be less than the number of observations.")
   }
 
   # --------------------------------------------------------
@@ -208,8 +244,6 @@ cluster_imputations <- function(imp_list,
 
       } else if (method == "pam") {
 
-        extra_args <- list(...)
-
         if (!is.null(extra_args$metric) && extra_args$metric == "gower") {
 
           # Gower distance for mixed data
@@ -218,7 +252,7 @@ cluster_imputations <- function(imp_list,
 
         } else {
 
-          # Clasic pam (numeric)
+          # Classic PAM (numeric data)
           cluster::pam(df, k, ...)$clustering
         }
 
@@ -288,8 +322,6 @@ cluster_imputations <- function(imp_list,
             kmeans(df, centers = k_i, ...)$cluster
 
           } else if (method == "pam") {
-
-            extra_args <- list(...)
 
             if (!is.null(extra_args$metric) &&
                 extra_args$metric == "gower") {
