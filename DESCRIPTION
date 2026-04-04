@@ -1,26 +1,38 @@
 Package: cclustr
-Title: Consensus Clustering for Multiple Imputation
+Title: Consensus Clustering Methods for Multiple Imputed Data
 Version: 0.1.0
 Authors@R: c(
     person("Anhuar", "Duran Mendoza", email = "aduranm@unbosque.edu.co", role = c("aut", "cre")),
     person("Andres", "Montenegro Lemus", email = "afmontenegro@unbosque.edu.co", role = "aut"),
     person("Mario", "Pacheco Lopez", email = "mpachecol@unbosque.edu.co", role = "aut")
   )
-Description: A library for standardizing, clustering and validating results from multiple imputed datasets.
+Description: Provides tools for performing consensus clustering on multiple 
+    imputed datasets. The package supports a range of clustering algorithms 
+    across imputations, including hierarchical methods (e.g., Ward, single, 
+    complete, average) and partition-based approaches such as k-means, 
+    k-medoids (PAM), fuzzy clustering, model-based clustering (mclust), 
+    and methods for mixed or categorical data (k-modes and k-prototypes). 
+    A co-assignment matrix is constructed to quantify agreement between 
+    partitions, and consensus solutions are derived via hierarchical 
+    clustering applied to the resulting dissimilarity matrix. Additional 
+    functions are provided for validation and visualization of clustering 
+    results, facilitating robust analysis in the presence of missing data.
 License: MIT + file LICENSE
 URL: https://github.com/andrews06ml/cclustr
 BugReports: https://github.com/andrews06ml/cclustr/issues
+Depends: R (>= 4.0)
 Imports: 
     cluster,
     e1071,
     fpc,
     graphics,
-    mclust,
-    mice,
     stats,
     viridisLite,
     klaR,
     clustMixType
+Suggests:
+    mclust,
+    mice
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
