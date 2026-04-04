@@ -81,7 +81,7 @@ Helper functions prefixed with a dot (e.g., \code{.pac_from_coassignment},
 \code{.mean_silhouette_from_diss}) are internal and not exported.
 }
 \examples{
-\dontrun{
+\donttest{
 library(mice)
 
 imp    <- mice(nhanes, m = 5, printFlag = FALSE)

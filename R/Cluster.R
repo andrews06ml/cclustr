@@ -113,28 +113,28 @@
 #' )
 #' str(res_pam)
 #'
-#' \donttest{
-#' if (requireNamespace("mice", quietly = TRUE)) {
-#'   imp   <- mice::mice(mice::nhanes, m = 3, printFlag = FALSE)
-#'   mild  <- as_mild_list(imp)
+#'\donttest{
+#'if (requireNamespace("mice", quietly = TRUE)) {
 #'
-#'   # Single k with hierarchical clustering
-#'   parts <- cluster_imputations(mild, method = "ward.D2", k = 3)
+#'  # Prepare original data
+#'  df_pre <- mice::nhanes
+#'  df_pre$age <- factor(df_pre$age)
+#'  df_pre$hyp <- factor(df_pre$hyp)
 #'
-#'   # Range of k values
-#'   parts_multi <- cluster_imputations(mild, method = "ward.D2", k = 2:5)
+#'  imp   <- mice::mice(df_pre, m = 3, printFlag = FALSE)
+#'  mild  <- as_mild_list(imp)
 #'
-#'   # PAM with Gower distance (mixed data)
-#'   parts_gower <- cluster_imputations(mild, method = "pam", k = 3,
-#'                                    metric = "gower")
+#'  # Single k with PAM with Gower distance (mixed data)
+#'  parts_gower <- cluster_imputations(mild_scaled, method = "pam", k = 3,
+#'                                     metric = "gower")
+#'  parts_gower
 #'
-#'   # k-modes for categorical data
-#'   parts_kmodes <- cluster_imputations(mild, method = "kmodes", k = 3)
-#'
-#'   # k-prototypes for mixed data
-#'   parts_kproto <- cluster_imputations(mild, method = "kprototypes", k = 3)
-#' }
-#' }
+#'  # Multiple k with Gower distance (mixed data)
+#'  parts_multi <- cluster_imputations(mild_scaled, method = "pam", k = 2:4,
+#'                                     metric = "gower")
+#'  parts_multi
+#'}
+#'}
 #'
 #' @seealso \code{\link{as_mild_list}}, \code{\link{consensus_clustering}}
 #'

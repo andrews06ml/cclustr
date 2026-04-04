@@ -117,7 +117,7 @@ provided so that the user can inspect individual metrics and make an
 informed decision.
 }
 \examples{
-\dontrun{
+\donttest{
 library(mice)
 
 imp   <- mice(nhanes, m = 5, printFlag = FALSE)

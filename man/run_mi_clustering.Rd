@@ -151,7 +151,7 @@ is returned directly, with \code{weights} and \code{tie_breaker} set to
 \code{NULL} in the \code{selection} element.
 }
 \examples{
-\dontrun{
+\donttest{
 library(mice)
 
 imp <- mice(nhanes, m = 5, printFlag = FALSE)

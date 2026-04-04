@@ -60,7 +60,7 @@ dark off-diagonal regions indicate observations that are rarely grouped
 together.
 }
 \examples{
-\dontrun{
+\donttest{
 library(mice)
 
 imp   <- mice(nhanes, m = 5, printFlag = FALSE)

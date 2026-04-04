@@ -62,7 +62,7 @@ the overall weighted rank aggregation - the \code{k} with the lowest
 score is the recommended solution.
 }
 \examples{
-\dontrun{
+\donttest{
 library(mice)
 
 imp    <- mice(nhanes, m = 5, printFlag = FALSE)

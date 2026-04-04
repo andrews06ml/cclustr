@@ -45,7 +45,7 @@ iteratively and manage the graphics layout externally via
 \code{\link[graphics]{par}}.
 }
 \examples{
-\dontrun{
+\donttest{
 library(mice)
 
 imp    <- mice(nhanes, m = 5, printFlag = FALSE)
