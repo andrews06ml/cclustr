@@ -68,23 +68,37 @@
 #' to equal weights with a warning.
 #'
 #' @examples
-#' \dontrun{
-#' library(mice)
+#' set.seed(123)
+#' # simulate 3 partitions
+#' partitions <- list(
+#'   imp1 = sample(1:2, 10, replace = TRUE),
+#'   imp2 = sample(1:2, 10, replace = TRUE),
+#'   imp3 = sample(1:2, 10, replace = TRUE)
+#' )
 #'
-#' imp    <- mice(nhanes, m = 5, printFlag = FALSE)
-#' mild   <- as_mild_list(imp)
-#' parts  <- cluster_imputations(mild, method = "ward.D2", k = 3)
+#' # Classic consensus
+#' cons <- consensus_clustering(partitions, k = 2)
+#' str(cons)
 #'
-#' # Single k, classic consensus
-#' cons <- consensus_clustering(parts, k = 3)
+#' \donttest{
+#' if (requireNamespace("mice", quietly = TRUE)) {
+#'   imp    <- mice::mice(mice::nhanes, m = 3, printFlag = FALSE)
+#'   mild   <- as_mild_list(imp)
+#'   parts  <- cluster_imputations(mild, method = "ward.D2", k = 3)
 #'
-#' # Single k, ARI-weighted consensus
-#' cons_w <- consensus_clustering(parts, k = 3,
-#'                                consensus_method = "weighted_ari")
+#'   # Single k, classic consensus
+#'   cons <- consensus_clustering(parts, k = 3)
+#'
+#'   # Single k, ARI-weighted consensus
+#'   if (requireNamespace("mclust", quietly = TRUE)) {
+#'     cons_w <- consensus_clustering(parts, k = 3,
+#'                                   consensus_method = "weighted_ari")
+#' }
 #'
 #' # Multiple k values
-#' parts_multi <- cluster_imputations(mild, method = "ward.D2", k = 2:5)
+#' parts_multi <- cluster_imputations(mild, method = "ward.D2", k = 2:4)
 #' cons_multi  <- consensus_clustering(parts_multi)
+#' }
 #' }
 #'
 #' @seealso \code{\link{cluster_imputations}}, \code{\link{validate_clustering}}

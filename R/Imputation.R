@@ -43,7 +43,7 @@ utils::globalVariables(c(".imp"))
 #' compatibility issues with \code{tibble} or other subclasses.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(mice)
 #'
 #' # Example with a mids object

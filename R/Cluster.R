@@ -1,4 +1,3 @@
-
 #' Perform clustering on multiple imputed datasets
 #'
 #' @description
@@ -79,27 +78,62 @@
 #' compatibility with categorical and mixed-data clustering methods.
 #'
 #' @examples
-#' \dontrun{
-#' library(mice)
+#' # Example with numeric data
+#' set.seed(123)
 #'
-#' imp   <- mice(nhanes, m = 5, printFlag = FALSE)
-#' mild  <- as_mild_list(imp)
+#' # Simulate 3 imputed datasets (list of data frames)
+#' imp_list <- replicate(3, {
+#'   data.frame(
+#'     x = rnorm(10),
+#'     y = rnorm(10)
+#'   )
+#' }, simplify = FALSE)
 #'
-#' # Single k with hierarchical clustering
-#' parts <- cluster_imputations(mild, method = "ward.D2", k = 3)
+#' # Hierarchical clustering
+#' res <- cluster_imputations(imp_list, method = "ward.D2", k = 2)
+#' str(res)
 #'
-#' # Range of k values
-#' parts_multi <- cluster_imputations(mild, method = "ward.D2", k = 2:5)
+#' # k-means clustering
+#' res_kmeans <- cluster_imputations(imp_list, method = "kmeans", k = 2)
+#' str(res_kmeans)
 #'
-#' # PAM with Gower distance (mixed data)
-#' parts_gower <- cluster_imputations(mild, method = "pam", k = 3,
+#' # Example with mixed data (numeric + categorical)
+#' imp_list_mixed <- replicate(2, {
+#'   data.frame(
+#'     x = rnorm(10),
+#'     y = factor(sample(letters[1:3], 10, replace = TRUE))
+#'   )
+#' }, simplify = FALSE)
+#'
+#' res_pam <- cluster_imputations(
+#'   imp_list_mixed,
+#'   method = "pam",
+#'   k = 2,
+#'   metric = "gower"
+#' )
+#' str(res_pam)
+#'
+#' \donttest{
+#' if (requireNamespace("mice", quietly = TRUE)) {
+#'   imp   <- mice::mice(mice::nhanes, m = 3, printFlag = FALSE)
+#'   mild  <- as_mild_list(imp)
+#'
+#'   # Single k with hierarchical clustering
+#'   parts <- cluster_imputations(mild, method = "ward.D2", k = 3)
+#'
+#'   # Range of k values
+#'   parts_multi <- cluster_imputations(mild, method = "ward.D2", k = 2:5)
+#'
+#'   # PAM with Gower distance (mixed data)
+#'   parts_gower <- cluster_imputations(mild, method = "pam", k = 3,
 #'                                    metric = "gower")
 #'
-#' # k-modes for categorical data
-#' parts_kmodes <- cluster_imputations(mild, method = "kmodes", k = 3)
+#'   # k-modes for categorical data
+#'   parts_kmodes <- cluster_imputations(mild, method = "kmodes", k = 3)
 #'
-#' # k-prototypes for mixed data
-#' parts_kproto <- cluster_imputations(mild, method = "kprototypes", k = 3)
+#'   # k-prototypes for mixed data
+#'   parts_kproto <- cluster_imputations(mild, method = "kprototypes", k = 3)
+#' }
 #' }
 #'
 #' @seealso \code{\link{as_mild_list}}, \code{\link{consensus_clustering}}
