@@ -1,0 +1,52 @@
+#' cclustr: Consensus Clustering Methods for Multiple Imputed Data
+#'
+#' @description
+#' The \pkg{cclustr} package provides a comprehensive framework for performing
+#' clustering analysis on datasets treated with multiple imputation. It
+#' addresses the uncertainty inherent in missing data by finding a stable
+#' consensus partition across multiple imputed realizations.
+#'
+#' @details
+#' Standard statistical workflows for imputed data often focus on supervised
+#' learning or univariate statistics. \pkg{cclustr} extends this to
+#' unsupervised learning by implementing a co-assignment matrix approach.
+#'
+#' @section Main Workflow:
+#' To achieve a robust consensus solution, follow these steps:
+#' \enumerate{
+#'   \item \strong{Standardization:} Use \code{\link{as_mild_list}} to format
+#'   imputed data (e.g., from \pkg{mice}) into a consistent structure.
+#'   \item \strong{Clustering:} Apply \code{\link{cluster_imputations}} to run
+#'   algorithms (K-means, PAM, K-prototypes, etc.) across all imputations.
+#'   \item \strong{Consensus:} Generate the final partition using
+#'   \code{\link{consensus_clustering}} based on co-assignment probabilities.
+#'   \item \strong{Selection:} Evaluate model quality and optimal cluster
+#'   counts with \code{\link{choose_best_clustering}}.
+#' }
+#'
+#' @section Supported Data Types:
+#' \itemize{
+#'   \item \strong{Numeric:} Hierarchical clustering, K-means, Fuzzy C-means, and Mclust.
+#'   \item \strong{Categorical:} K-modes.
+#'   \item \strong{Mixed:} PAM with Gower distance or K-prototypes.
+#' }
+#'
+#' @author
+#' \strong{Maintainer}: Anhuar Duran Mendoza \email{aduranm@@unbosque.edu.co}
+#'
+#' Authors:
+#' \itemize{
+#'   \item Andres Montenegro Lemus \email{afmontenegro@@unbosque.edu.co}
+#'   \item Mario Pacheco Lopez \email{mpachecol@@unbosque.edu.co}
+#' }
+#'
+#' @seealso
+#' Useful links:
+#' \itemize{
+#'   \item \url{https://github.com/andrews06ml/cclustr}
+#'   \item Report bugs at \url{https://github.com/andrews06ml/cclustr/issues}
+#' }
+#'
+#' @docType package
+#' @keywords internal
+"_PACKAGE"
