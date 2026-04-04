@@ -12,6 +12,8 @@ plot_consensus_dendrogram(consensus_result, k = NULL, rect = TRUE, hang = -1)
 at least \code{$hclust} (an \code{hclust} object) and \code{$k} (an
 integer specifying the number of clusters).}
 
+\item{k}{Numeric. It is the number of clusters selected for the dendrogram.}
+
 \item{rect}{Logical. If \code{TRUE} (default), colored rectangles are drawn
 around the clusters via \code{\link[stats]{rect.hclust}}.}
 

@@ -99,14 +99,14 @@ plot_validation_metrics <- function(validation_table,
     stop("None of the requested metrics are available in validation_table.")
   }
 
-  old_par <- par(no.readonly = TRUE)
-  on.exit(par(old_par))
+  old_par <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(old_par))
 
   n         <- length(available_metrics)
   nrow_plot <- ceiling(sqrt(n))
   ncol_plot <- ceiling(n / nrow_plot)
 
-  par(mfrow = c(nrow_plot, ncol_plot), ask = ask)
+  graphics::par(mfrow = c(nrow_plot, ncol_plot), ask = ask)
 
   for (metric in available_metrics) {
 
@@ -123,7 +123,7 @@ plot_validation_metrics <- function(validation_table,
       if (metric %in% c("pac", "davies_bouldin_mean", "score")) -y else y
     )
 
-    points(validation_table$k[best_idx], y[best_idx],
+    graphics::points(validation_table$k[best_idx], y[best_idx],
            pch = 19, cex = 1.4, col = "red")  # <- corregido
   }
 }

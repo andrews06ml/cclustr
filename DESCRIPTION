@@ -11,15 +11,12 @@ License: MIT + file LICENSE
 URL: https://github.com/andrews06ml/cclustr
 BugReports: https://github.com/andrews06ml/cclustr/issues
 Imports: 
-    Amelia,
     cluster,
     e1071,
     fpc,
     graphics,
-    grDevices,
     mclust,
     mice,
-    mitools,
     stats,
     viridisLite,
     klaR,

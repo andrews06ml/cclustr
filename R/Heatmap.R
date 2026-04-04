@@ -75,46 +75,46 @@ plot_consensus_matrix <- function(consensus_result,
                                   reorder        = TRUE,
                                   show_labels    = FALSE,
                                   viridis_option = "D") {
-  
+
   if (is.null(consensus_result$coassignment)) {
     stop("consensus_result must contain 'coassignment'.")
   }
-  
+
   M <- consensus_result$coassignment
-  
+
   if (!is.matrix(M)) {
     stop("'coassignment' must be a matrix.")
   }
-  
+
   ord <- seq_len(nrow(M))
-  
+
   if (reorder) {
     if (!is.null(consensus_result$consensus)) {
       ord <- order(consensus_result$consensus)
     }
   }
-  
+
   M_ord <- M[ord, ord, drop = FALSE]
-  
-  op <- par(no.readonly = TRUE)
-  on.exit(par(op))
-  
-  par(mar = c(4, 4, 2, 2))
-  
-  image(1:nrow(M_ord), 1:ncol(M_ord), t(M_ord[nrow(M_ord):1, ]),
+
+  op <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(op))
+
+  graphics::par(mar = c(4, 4, 2, 2))
+
+  graphics::image(1:nrow(M_ord), 1:ncol(M_ord), t(M_ord[nrow(M_ord):1, ]),
         col   = viridisLite::viridis(100, option = viridis_option),
         axes  = FALSE,
         xlab  = "Observaciones",
         ylab  = "Observaciones",
         main  = paste("Matriz de consenso (k =", consensus_result$k, ")"))
-  
+
   if (show_labels) {
-    axis(1, at = seq_len(nrow(M_ord)), labels = ord,      las = 2, cex.axis = 0.4)
-    axis(2, at = seq_len(ncol(M_ord)), labels = rev(ord), las = 2, cex.axis = 0.4)
+    graphics::axis(1, at = seq_len(nrow(M_ord)), labels = ord,      las = 2, cex.axis = 0.4)
+    graphics::axis(2, at = seq_len(ncol(M_ord)), labels = rev(ord), las = 2, cex.axis = 0.4)
   } else {
-    axis(1)
-    axis(2)
+    graphics::axis(1)
+    graphics::axis(2)
   }
-  
-  box() 
+
+  graphics::box()
 }

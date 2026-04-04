@@ -124,7 +124,7 @@ plot_consensus_dendrogram <- function(consensus_result,
        sub = "")
 
   if (rect) {
-    rect.hclust(consensus_result$hclust,
+    stats::rect.hclust(consensus_result$hclust,
                 k = consensus_result$k,
                 border = 2:6)
   }

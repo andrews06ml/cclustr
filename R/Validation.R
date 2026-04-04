@@ -51,7 +51,7 @@
 #'   }
 #'
 #' @details
-#' All internal validation metrics (silhouette, Calinski-Harabasz, 
+#' All internal validation metrics (silhouette, Calinski-Harabasz,
 #' Davies-Bouldin, Dunn) are computed exclusively on the consensus
 #' dissimilarity matrix \eqn{1 - C} rather than on the original feature
 #' space. This design choice ensures compatibility with any data type and
@@ -87,7 +87,7 @@ validate_clustering <- function(partitions,
                                 consensus_results,
                                 pac_lower = 0.1,
                                 pac_upper = 0.9) {
-  
+
   # Required packages
   if (!requireNamespace("mclust", quietly = TRUE)) {
     stop("Package 'mclust' is required.")
@@ -98,21 +98,21 @@ validate_clustering <- function(partitions,
   if (!requireNamespace("fpc", quietly = TRUE)) {
     stop("Package 'fpc' is required.")
   }
-  
+
   # --------------------------------------------------------
   # Helpers
   # --------------------------------------------------------
-  
+
   .pac_from_coassignment <- function(coassignment, lower, upper) {
     vals <- coassignment[upper.tri(coassignment, diag = FALSE)]
     mean(vals > lower & vals < upper)
   }
-  
+
   .mean_silhouette_from_diss <- function(diss, labels) {
-    sil <- cluster::silhouette(as.integer(labels), as.dist(diss))
+    sil <- cluster::silhouette(as.integer(labels), stats::as.dist(diss))
     mean(sil[, "sil_width"])
   }
-  
+
   .ari_mean_between_partitions <- function(parts_list) {
     m <- length(parts_list)
     if (m < 2) return(NA_real_)
@@ -125,16 +125,16 @@ validate_clustering <- function(partitions,
     }
     mean(ari_vals)
   }
-  
+
   .ari_consensus_mean <- function(consensus, parts_list) {
     mean(sapply(parts_list, function(z)
       mclust::adjustedRandIndex(consensus, z)))
   }
-  
+
   # CH + Dunn from dissimilarity
   .ch_dunn_from_diss <- function(diss, labels) {
     cs <- tryCatch(
-      fpc::cluster.stats(d = as.dist(diss),
+      fpc::cluster.stats(d = stats::as.dist(diss),
                          clustering = as.integer(labels)),
       error = function(e) NULL
     )
@@ -146,36 +146,36 @@ validate_clustering <- function(partitions,
       dunn = as.numeric(cs$dunn)
     )
   }
-  
+
   # Davies–Bouldin (medoid-based)
   .db_from_diss_medoids <- function(diss, labels) {
-    
+
     labs <- as.integer(labels)
     cl_ids <- sort(unique(labs))
     k <- length(cl_ids)
     if (k < 2) return(NA_real_)
-    
+
     medoid <- integer(k)
     S <- numeric(k)
-    
+
     for (ii in seq_along(cl_ids)) {
       cl <- cl_ids[ii]
       idx <- which(labs == cl)
-      
+
       if (length(idx) <= 1) {
         medoid[ii] <- idx[1]
         S[ii] <- 0
         next
       }
-      
+
       Dsub <- diss[idx, idx, drop = FALSE]
       mpos <- which.min(rowSums(Dsub))
       medoid[ii] <- idx[mpos]
       S[ii] <- mean(diss[idx, medoid[ii]])
     }
-    
+
     d_med <- diss[medoid, medoid, drop = FALSE]
-    
+
     Rmax <- rep(NA_real_, k)
     for (i in 1:k) {
       ratios <- rep(NA_real_, k)
@@ -189,22 +189,22 @@ validate_clustering <- function(partitions,
       Rmax[i] <- suppressWarnings(max(ratios, na.rm = TRUE))
       if (!is.finite(Rmax[i])) Rmax[i] <- NA_real_
     }
-    
+
     mean(Rmax, na.rm = TRUE)
   }
-  
+
   # --------------------------------------------------------
   # Core computation per k
   # --------------------------------------------------------
-  
+
   .one_k <- function(parts_k, cres_k) {
-    
+
     cons  <- cres_k$consensus
     coass <- cres_k$coassignment
     diss  <- 1 - coass
-    
+
     chd <- .ch_dunn_from_diss(diss, cons)
-    
+
     data.frame(
       k = cres_k$k,
       pac = .pac_from_coassignment(coass, pac_lower, pac_upper),
@@ -220,25 +220,25 @@ validate_clustering <- function(partitions,
       stringsAsFactors = FALSE
     )
   }
-  
+
   # --------------------------------------------------------
   # Single-k vs Multi-k
   # --------------------------------------------------------
-  
+
   is_multi_k <- all(sapply(partitions, is.list))
-  
+
   if (!is_multi_k) {
     return(.one_k(partitions, consensus_results))
   }
-  
+
   k_names <- intersect(names(partitions), names(consensus_results))
   k_values <- suppressWarnings(as.integer(sub("^k", "", k_names)))
   k_names <- k_names[order(k_values)]
-  
+
   rows <- lapply(k_names,
                  function(kk)
                    .one_k(partitions[[kk]],
                           consensus_results[[kk]]))
-  
+
   do.call(rbind, rows)
 }
