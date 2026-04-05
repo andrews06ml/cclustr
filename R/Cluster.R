@@ -218,7 +218,7 @@ cluster_imputations <- function(imp_list,
       stacked <- do.call(rbind, imp_list)
 
       means <- colMeans(stacked[, num_cols, drop = FALSE])
-      sds   <- apply(stacked[, num_cols, drop = FALSE], 2, sd)
+      sds   <- apply(stacked[, num_cols, drop = FALSE], 2, stats::sd)
 
       # Avoid division by zero
       sds[sds == 0] <- 1

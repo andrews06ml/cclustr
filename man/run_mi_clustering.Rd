@@ -8,7 +8,7 @@ run_mi_clustering(
   data,
   method = "ward.D2",
   k,
-  scale_data = TRUE,
+  scale_data = "global",
   consensus_method = c("classic", "weighted_ari"),
   cluster_method_consensus = "ward.D2",
   pac_lower = 0.1,
@@ -40,8 +40,11 @@ the \code{\link{choose_best_clustering}} step and returns that solution
 directly. If a vector is supplied, all values are evaluated and the
 optimal \code{k} is selected via weighted rank aggregation.}
 
-\item{scale_data}{Logical. If \code{TRUE} (default), numeric columns are
-standardized to zero mean and unit variance prior to clustering.}
+\item{scale_data}{A character string specifying how numeric columns are
+standardized prior to clustering. Accepted values are \code{"none"}
+(no scaling), \code{"by_imputation"} (each imputed dataset scaled
+independently), and \code{"global"} (all imputations scaled together
+using pooled mean and standard deviation). Default is \code{"global"}.}
 
 \item{consensus_method}{A character string specifying the method used to
 build the co-assignment matrix. \code{"classic"} assigns equal weight to
@@ -97,7 +100,8 @@ with the following elements:
 method used.
 \item \code{consensus_method}: character string with the consensus
 method used.
-\item \code{scale_data}: logical indicating whether data were scaled.
+\item \code{scale_data}: A character string specifying how numeric columns
+are standardized prior to clustering
 \item \code{imputations}: standardized list of imputed datasets, as
 returned by \code{\link{as_mild_list}}.
 \item \code{partitions}: clustering assignments per imputed dataset,
@@ -151,10 +155,37 @@ is returned directly, with \code{weights} and \code{tie_breaker} set to
 \code{NULL} in the \code{selection} element.
 }
 \examples{
-\donttest{
-library(mice)
+# ------------------------------------------------------------
+# Example 1: Simulated list of imputed datasets
+# ------------------------------------------------------------
+set.seed(123)
+make_imputation <- function() {
+  data.frame(
+    x1 = rnorm(30),
+    x2 = rnorm(30),
+    x3 = rnorm(30)
+  )
+}
 
-imp <- mice(nhanes, m = 5, printFlag = FALSE)
+imp_list <- lapply(1:5, function(i) make_imputation())
+
+# Single k
+res <- run_mi_clustering(imp_list, method = "ward.D2", k = 3)
+res$best_k
+res$best_consensus
+
+# Range of k values (automatic selection)
+res_multi <- run_mi_clustering(imp_list, method = "ward.D2", k = 2:4)
+res_multi$best_k
+res_multi$validation_table
+
+\donttest{
+# ------------------------------------------------------------
+# Example 2: Full pipeline with mice
+# ------------------------------------------------------------
+if (requireNamespace("mice", quietly = TRUE)) {
+
+imp <- mice::mice(mice::nhanes, m = 5, printFlag = FALSE)
 
 # Single k
 res <- run_mi_clustering(imp, method = "ward.D2", k = 3)
@@ -175,6 +206,7 @@ res_w <- run_mi_clustering(imp, method = "ward.D2", k = 2:5,
                            consensus_method  = "weighted_ari",
                            prefer_stability  = FALSE,
                            tie_breaker       = "dunn")
+}
 }
 
 }

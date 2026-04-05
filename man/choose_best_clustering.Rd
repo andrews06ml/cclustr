@@ -117,10 +117,56 @@ provided so that the user can inspect individual metrics and make an
 informed decision.
 }
 \examples{
-\donttest{
-library(mice)
+# ------------------------------------------------------------
+# Example 1: Basic validation with simulated partitions
+# ------------------------------------------------------------
 
-imp   <- mice(nhanes, m = 5, printFlag = FALSE)
+# 1. Simulated validation table for k = 2, 3, 4
+val_table <- data.frame(
+  k                            = 2:4,
+  pac                          = c(0.15, 0.08, 0.20),
+  silhouette_mean              = c(0.42, 0.61, 0.38),
+  ari_mean_between_imputations = c(0.80, 0.91, 0.75),
+  ari_consensus_mean           = c(0.82, 0.93, 0.77),
+  calinski_harabasz_mean       = c(120,  198,  105),
+  davies_bouldin_mean          = c(0.85, 0.54, 0.97),
+  dunn_index                   = c(0.30, 0.48, 0.27)
+)
+
+# 2. Simulated consensus result for each k
+set.seed(123)
+n <- 30
+make_cons <- function(k) {
+  list(
+    k            = k,
+    consensus    = sample(seq_len(k), n, replace = TRUE),
+    coassignment = matrix(runif(n * n), n, n)
+  )
+}
+cons_results <- list(k2 = make_cons(2),
+                     k3 = make_cons(3),
+                     k4 = make_cons(4))
+
+# 3. Default selection (equal weights)
+best <- choose_best_clustering(val_table, cons_results)
+best$best_k
+head(best$scores_table)
+
+
+# 4. Custom weights
+best_custom <- choose_best_clustering(
+  val_table, cons_results,
+  weights = c(pac = 3, silhouette = 1, ari_between = 3,
+              ari_consensus = 3, ch = 1, db = 1, dunn = 1)
+)
+
+\donttest{
+# ------------------------------------------------------------
+# Example 2: Full pipeline with mice
+# ------------------------------------------------------------
+if (requireNamespace("mice", quietly = TRUE)) {
+
+imp   <- mice::mice(mice::nhanes, m = 5, printFlag = FALSE)
 mild  <- as_mild_list(imp)
 parts <- cluster_imputations(mild, method = "ward.D2", k = 2:5)
 cons  <- consensus_clustering(parts)
@@ -144,6 +190,7 @@ best4 <- choose_best_clustering(val, cons,
                                 weights = c(pac = 3, silhouette = 1,
                                             ari_between = 3, ari_consensus = 3,
                                             ch = 1, db = 1, dunn = 1))
+}
 }
 
 }

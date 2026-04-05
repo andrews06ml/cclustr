@@ -81,19 +81,41 @@ Helper functions prefixed with a dot (e.g., \code{.pac_from_coassignment},
 \code{.mean_silhouette_from_diss}) are internal and not exported.
 }
 \examples{
-\donttest{
-library(mice)
+# ------------------------------------------------------------
+# Example 1: Basic validation with simulated partitions
+# ------------------------------------------------------------
+set.seed(123)
 
-imp    <- mice(nhanes, m = 5, printFlag = FALSE)
-mild   <- as_mild_list(imp)
+# Simulate partitions (3 imputations, k = 2)
+parts <- list(
+  imp1 = sample(1:2, 20, replace = TRUE),
+  imp2 = sample(1:2, 20, replace = TRUE),
+  imp3 = sample(1:2, 20, replace = TRUE)
+)
 
-# Multi-k pipeline
-parts  <- cluster_imputations(mild, method = "ward.D2", k = 2:5)
-cons   <- consensus_clustering(parts)
-val    <- validate_clustering(parts, cons)
+cons <- consensus_clustering(parts, k = 2)
+val  <- validate_clustering(parts, cons)
 
-# Inspect the validation table
 print(val)
+
+\donttest{
+# ------------------------------------------------------------
+# Example 2: Full pipeline with mice (multiple k)
+# ------------------------------------------------------------
+if (requireNamespace("mice", quietly = TRUE)) {
+
+  set.seed(123)
+
+  imp  <- mice::mice(mice::nhanes, m = 3, printFlag = FALSE)
+  mild <- as_mild_list(imp)
+
+  parts <- cluster_imputations(mild, method = "ward.D2", k = 2:3)
+  cons  <- consensus_clustering(parts)
+
+  val <- validate_clustering(parts, cons)
+
+  print(val)
+}
 }
 
 }

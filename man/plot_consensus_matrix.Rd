@@ -60,10 +60,31 @@ dark off-diagonal regions indicate observations that are rarely grouped
 together.
 }
 \examples{
-\donttest{
-library(mice)
+# ------------------------------------------------------------
+# Example 1: Consensus matrix with simulated consensus result
+# ------------------------------------------------------------
+set.seed(123)
+n <- 20
+true_labels <- rep(1:2, each = n / 2)
+M <- matrix(0.1, n, n)
+for (i in seq_len(n))
+  for (j in seq_len(n))
+    if (true_labels[i] == true_labels[j]) M[i, j] <- 0.9
 
-imp   <- mice(nhanes, m = 5, printFlag = FALSE)
+cons <- list(coassignment = M,
+             consensus    = true_labels,
+             k            = 2)
+
+plot_consensus_matrix(cons, viridis_option = "A")
+
+\donttest{
+# ------------------------------------------------------------
+# Example 2: Consensus matrix with mice
+# ------------------------------------------------------------
+
+if (requireNamespace("mice", quietly = TRUE)) {
+
+imp   <- mice::mice(mice::nhanes, m = 5, printFlag = FALSE)
 mild  <- as_mild_list(imp)
 parts <- cluster_imputations(mild, method = "ward.D2", k = 3)
 cons  <- consensus_clustering(parts, k = 3)
@@ -80,6 +101,7 @@ for (opt in c("A", "B", "C", "D")) {
   plot_consensus_matrix(cons, viridis_option = opt)
 }
 par(mfrow = c(1, 1))
+}
 }
 
 }

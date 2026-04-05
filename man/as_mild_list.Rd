@@ -33,6 +33,9 @@ from \pkg{mice}, long-format data frames, \code{amelia} objects,
 \code{imputationList} objects from \pkg{mitools}, and plain lists of
 data frames. After conversion, consistency and data quality checks are
 applied across all imputed datasets.
+
+This function is designed as a preprocessing step for clustering
+multiple imputed datasets, ensuring strict comparability across imputations.
 }
 \details{
 The function performs the following consistency checks before returning:
@@ -41,24 +44,53 @@ The function performs the following consistency checks before returning:
 \item Identical number of columns across all imputed datasets.
 \item Identical column names across all imputed datasets.
 \item Absence of \code{NA}, \code{NaN}, and \code{Inf} values.
-\item Absence of zero values (strict validation for downstream
-clustering).
+\item Absence of numeric columns with all values equal to zero,
+as such variables provide no information for distance-based
+clustering and may lead to degenerate solutions.
 }
 All datasets are coerced to base \code{data.frame} to avoid
 compatibility issues with \code{tibble} or other subclasses.
 }
 \examples{
+# ------------------------------------------------------------
+# Example 1: Simple list of completed datasets
+# ------------------------------------------------------------
+set.seed(123)
+
+imp_list <- replicate(3, {
+  data.frame(
+    x = rnorm(10),
+    y = rnorm(10)
+  )
+}, simplify = FALSE)
+
+mild <- as_mild_list(imp_list)
+
+length(mild)      # number of imputations
+str(mild[[1]])    # structure of one dataset
+
 \donttest{
-library(mice)
+# ------------------------------------------------------------
+# Example 2: List of completed datasets with mice
+# ------------------------------------------------------------
 
-# Example with a mids object
-imp <- mice(nhanes, m = 5, printFlag = FALSE)
-mild <- as_mild_list(imp)
-length(mild)  # 5
+if (requireNamespace("mice", quietly = TRUE)) {
 
-# Example with long-format data frame
-long_df <- mice::complete(imp, action = "long", include = FALSE)
-mild2 <- as_mild_list(long_df)
+  set.seed(123)
+
+  # Example 1: Using a mids object
+  imp <- mice::mice(mice::nhanes, m = 5, printFlag = FALSE)
+  mild <- as_mild_list(imp)
+
+  length(mild)        # number of imputations
+  str(mild[[1]])      # structure of one completed dataset
+
+  # Example 2: Using long-format data
+  long_df <- mice::complete(imp, action = "long", include = FALSE)
+  mild2 <- as_mild_list(long_df)
+
+  length(mild2)
+}
 }
 
 }

@@ -4,7 +4,13 @@
 \alias{cluster_imputations}
 \title{Perform clustering on multiple imputed datasets}
 \usage{
-cluster_imputations(imp_list, method = "ward.D2", k, scale_data = TRUE, ...)
+cluster_imputations(
+  imp_list,
+  method = "ward.D2",
+  k,
+  scale_data = c("global", "within", "none"),
+  ...
+)
 }
 \arguments{
 \item{imp_list}{A named list of \code{data.frame} objects, as returned by
@@ -31,10 +37,22 @@ Default is \code{"ward.D2"}.}
 clusters. If a vector is provided, clustering is performed for each
 value of \code{k}.}
 
-\item{scale_data}{Logical. If \code{TRUE} (default), numeric columns are
-standardized to zero mean and unit variance prior to clustering.
-This option is ignored for methods that do not require scaling,
-such as \code{"kmodes"}.}
+\item{scale_data}{Character string specifying the scaling strategy for
+numeric variables. Options are:
+\itemize{
+\item \code{"global"}: (default) variables are scaled using global
+mean and standard deviation computed across all imputations.
+Ensures comparability between datasets and is recommended for
+consensus clustering.
+\item \code{"within"}: each imputed dataset is scaled independently
+using its own mean and standard deviation. This option may be
+useful for exploratory analyses where the goal is to preserve
+the internal structure of each imputation. However, it can
+introduce inconsistencies in distance scales across datasets,
+potentially affecting the stability and interpretation of
+consensus clustering results.
+\item \code{"none"}: no scaling is applied.
+}}
 
 \item{...}{Additional arguments passed to the underlying clustering
 function (\code{kmeans}, \code{cluster::pam}, \code{e1071::cmeans},
@@ -85,7 +103,9 @@ Character variables are internally converted to factors to ensure
 compatibility with categorical and mixed-data clustering methods.
 }
 \examples{
-# Example with numeric data
+# ------------------------------------------------------------
+# Example 1: with numeric data
+# ------------------------------------------------------------
 set.seed(123)
 
 # Simulate 3 imputed datasets (list of data frames)
@@ -104,7 +124,9 @@ str(res)
 res_kmeans <- cluster_imputations(imp_list, method = "kmeans", k = 2)
 str(res_kmeans)
 
-# Example with mixed data (numeric + categorical)
+# ------------------------------------------------------------
+# Example 2: with mixed data (numeric + categorical)
+# ------------------------------------------------------------
 imp_list_mixed <- replicate(2, {
   data.frame(
     x = rnorm(10),
@@ -121,6 +143,9 @@ res_pam <- cluster_imputations(
 str(res_pam)
 
 \donttest{
+# ------------------------------------------------------------
+# Example 3: mixed data (numeric + categorical) with mice
+# ------------------------------------------------------------
 if (requireNamespace("mice", quietly = TRUE)) {
 
  # Prepare original data
@@ -132,12 +157,12 @@ if (requireNamespace("mice", quietly = TRUE)) {
  mild  <- as_mild_list(imp)
 
  # Single k with PAM with Gower distance (mixed data)
- parts_gower <- cluster_imputations(mild_scaled, method = "pam", k = 3,
+ parts_gower <- cluster_imputations(mild, method = "pam", k = 3,
                                     metric = "gower")
  parts_gower
 
  # Multiple k with Gower distance (mixed data)
- parts_multi <- cluster_imputations(mild_scaled, method = "pam", k = 2:4,
+ parts_multi <- cluster_imputations(mild, method = "pam", k = 2:4,
                                     metric = "gower")
  parts_multi
 }

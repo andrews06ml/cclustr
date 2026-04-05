@@ -12,7 +12,9 @@ plot_consensus_dendrogram(consensus_result, k = NULL, rect = TRUE, hang = -1)
 at least \code{$hclust} (an \code{hclust} object) and \code{$k} (an
 integer specifying the number of clusters).}
 
-\item{k}{Numeric. It is the number of clusters selected for the dendrogram.}
+\item{k}{Integer. The number of clusters to display. Only required when
+\code{consensus_result} contains results for multiple \code{k} values.
+Ignored if a single-k result is passed directly.}
 
 \item{rect}{Logical. If \code{TRUE} (default), colored rectangles are drawn
 around the clusters via \code{\link[stats]{rect.hclust}}.}
@@ -45,10 +47,24 @@ iteratively and manage the graphics layout externally via
 \code{\link[graphics]{par}}.
 }
 \examples{
-\donttest{
-library(mice)
+# ------------------------------------------------------------
+# Example 1: consensus dendrogram with simulated results
+# ------------------------------------------------------------
 
-imp    <- mice(nhanes, m = 5, printFlag = FALSE)
+hc <- hclust(dist(matrix(rnorm(60), nrow = 20)), method = "ward.D2")
+cons <- list(hclust = hc, k = 3)
+
+plot_consensus_dendrogram(cons)
+plot_consensus_dendrogram(cons, rect = FALSE)
+
+\donttest{
+# ------------------------------------------------------------
+# Example 2: Dendrogram with mice
+# ------------------------------------------------------------
+
+if (requireNamespace("mice", quietly = TRUE)) {
+
+imp    <- mice::mice(mice::nhanes, m = 5, printFlag = FALSE)
 mild   <- as_mild_list(imp)
 parts  <- cluster_imputations(mild, method = "ward.D2", k = 3)
 cons   <- consensus_clustering(parts, k = 3)
@@ -68,6 +84,7 @@ for (k_i in 2:4) {
   plot_consensus_dendrogram(cons_multi[[paste0("k", k_i)]])
 }
 par(mfrow = c(1, 1))
+}
 }
 
 }

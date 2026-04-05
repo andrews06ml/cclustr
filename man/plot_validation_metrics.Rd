@@ -62,10 +62,36 @@ the overall weighted rank aggregation - the \code{k} with the lowest
 score is the recommended solution.
 }
 \examples{
-\donttest{
-library(mice)
+# ------------------------------------------------------------
+# Example 1: Validation metrics with simulated data
+# ------------------------------------------------------------
+val_table <- data.frame(
+  k                            = 2:4,
+  pac                          = c(0.15, 0.08, 0.20),
+  silhouette_mean              = c(0.42, 0.61, 0.38),
+  ari_mean_between_imputations = c(0.80, 0.91, 0.75),
+  ari_consensus_mean           = c(0.82, 0.93, 0.77),
+  calinski_harabasz_mean       = c(120,  198,  105),
+  davies_bouldin_mean          = c(0.85, 0.54, 0.97),
+  dunn_index                   = c(0.30, 0.48, 0.27)
+)
 
-imp    <- mice(nhanes, m = 5, printFlag = FALSE)
+# Plot all metrics
+plot_validation_metrics(val_table)
+
+# Plot only stability metrics
+plot_validation_metrics(val_table,
+                        metrics = c("pac",
+                                    "ari_mean_between_imputations",
+                                    "ari_consensus_mean"))
+\donttest{
+# ------------------------------------------------------------
+# Example 2: metrics validation with mice
+# ------------------------------------------------------------
+
+if (requireNamespace("mice", quietly = TRUE)) {
+
+imp    <- mice::mice(mice::nhanes, m = 5, printFlag = FALSE)
 mild   <- as_mild_list(imp)
 parts  <- cluster_imputations(mild, method = "ward.D2", k = 2:5)
 cons   <- consensus_clustering(parts)
@@ -83,6 +109,7 @@ plot_validation_metrics(val,
                         metrics = c("pac",
                                     "ari_mean_between_imputations",
                                     "ari_consensus_mean"))
+}
 }
 
 }

@@ -83,6 +83,9 @@ are floored at zero. If all centralities are zero, the function falls back
 to equal weights with a warning.
 }
 \examples{
+# ------------------------------------------------------------
+# Example 1: Basic consensus clustering
+# ------------------------------------------------------------
 set.seed(123)
 # simulate 3 partitions
 partitions <- list(
@@ -96,23 +99,34 @@ cons <- consensus_clustering(partitions, k = 2)
 str(cons)
 
 \donttest{
+# ------------------------------------------------------------
+# Example 2: consensus method with mice
+# ------------------------------------------------------------
 if (requireNamespace("mice", quietly = TRUE)) {
+
+  set.seed(123)
+
   imp    <- mice::mice(mice::nhanes, m = 3, printFlag = FALSE)
   mild   <- as_mild_list(imp)
   parts  <- cluster_imputations(mild, method = "ward.D2", k = 3)
 
+  # -------------------------------------------------------------
   # Single k, classic consensus
+  # -------------------------------------------------------------
   cons <- consensus_clustering(parts, k = 3)
 
+  # -------------------------------------------------------------
   # Single k, ARI-weighted consensus
+ # -------------------------------------------------------------
   if (requireNamespace("mclust", quietly = TRUE)) {
     cons_w <- consensus_clustering(parts, k = 3,
                                   consensus_method = "weighted_ari")
 }
-
-# Multiple k values
-parts_multi <- cluster_imputations(mild, method = "ward.D2", k = 2:4)
-cons_multi  <- consensus_clustering(parts_multi)
+  # -------------------------------------------------------------
+  # Multiple k values
+  # -------------------------------------------------------------
+  parts_multi <- cluster_imputations(mild, method = "ward.D2", k = 2:4)
+  cons_multi  <- consensus_clustering(parts_multi)
 }
 }
 
