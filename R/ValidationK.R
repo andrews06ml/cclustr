@@ -46,8 +46,34 @@
 #' score is the recommended solution.
 #'
 #' @examples
+#' # ------------------------------------------------------------
+#' # Example 1: Validation metrics with simulated data
+#' # ------------------------------------------------------------
+#' val_table <- data.frame(
+#'   k                            = 2:4,
+#'   pac                          = c(0.15, 0.08, 0.20),
+#'   silhouette_mean              = c(0.42, 0.61, 0.38),
+#'   ari_mean_between_imputations = c(0.80, 0.91, 0.75),
+#'   ari_consensus_mean           = c(0.82, 0.93, 0.77),
+#'   calinski_harabasz_mean       = c(120,  198,  105),
+#'   davies_bouldin_mean          = c(0.85, 0.54, 0.97),
+#'   dunn_index                   = c(0.30, 0.48, 0.27)
+#' )
+#'
+#' # Plot all metrics
+#' plot_validation_metrics(val_table)
+#'
+#' # Plot only stability metrics
+#' plot_validation_metrics(val_table,
+#'                         metrics = c("pac",
+#'                                     "ari_mean_between_imputations",
+#'                                     "ari_consensus_mean"))
 #' \donttest{
-#' library(mice)
+#' # ------------------------------------------------------------
+#' # Example 2: metrics validation with mice
+#' # ------------------------------------------------------------
+#'
+#' if (requireNamespace("mice", quietly = TRUE)) {
 #'
 #' imp    <- mice(nhanes, m = 5, printFlag = FALSE)
 #' mild   <- as_mild_list(imp)
@@ -67,6 +93,7 @@
 #'                         metrics = c("pac",
 #'                                     "ari_mean_between_imputations",
 #'                                     "ari_consensus_mean"))
+#' }
 #' }
 #'
 #' @seealso
@@ -108,23 +135,39 @@ plot_validation_metrics <- function(validation_table,
 
   graphics::par(mfrow = c(nrow_plot, ncol_plot), ask = ask)
 
+  # labels for each metric
+  metric_labels <- c(
+    pac                          = "PAC",
+    silhouette_mean              = "Silhouette",
+    ari_mean_between_imputations = "ARI (between imputations)",
+    ari_consensus_mean           = "ARI (consensus)",
+    calinski_harabasz_mean       = "Calinski-Harabasz",
+    davies_bouldin_mean          = "Davies-Bouldin",
+    dunn_index                   = "Dunn Index",
+    score                        = "Weighted Score"
+  )
+
   for (metric in available_metrics) {
 
     y <- validation_table[[metric]]
+
+    label <- if (!is.na(metric_labels[metric])) metric_labels[metric] else gsub("_", " ", metric)
 
     plot(validation_table$k, y,
          type = "b",
          pch  = 19,
          xlab = "Number of clusters (k)",
-         ylab = metric,
-         main = gsub("_", " ", metric))
+         ylab = label,
+         main = label)
 
     best_idx <- which.max(
       if (metric %in% c("pac", "davies_bouldin_mean", "score")) -y else y
     )
+    if (length(best_idx) == 0) next
 
     graphics::points(validation_table$k[best_idx], y[best_idx],
-           pch = 19, cex = 1.4, col = "red")  # <- corregido
+           pch = 19, cex = 1.4, col = "red")
   }
+  invisible(NULL)
 }
 

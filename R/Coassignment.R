@@ -68,6 +68,9 @@
 #' to equal weights with a warning.
 #'
 #' @examples
+#' # ------------------------------------------------------------
+#' # Example 1: Basic consensus clustering
+#' # ------------------------------------------------------------
 #' set.seed(123)
 #' # simulate 3 partitions
 #' partitions <- list(
@@ -81,23 +84,34 @@
 #' str(cons)
 #'
 #' \donttest{
+#' # ------------------------------------------------------------
+#' # Example 2: consensus method with mice
+#' # ------------------------------------------------------------
 #' if (requireNamespace("mice", quietly = TRUE)) {
+#'
+#'   set.seed(123)
+#'
 #'   imp    <- mice::mice(mice::nhanes, m = 3, printFlag = FALSE)
 #'   mild   <- as_mild_list(imp)
 #'   parts  <- cluster_imputations(mild, method = "ward.D2", k = 3)
 #'
+#'   # -------------------------------------------------------------
 #'   # Single k, classic consensus
+#'   # -------------------------------------------------------------
 #'   cons <- consensus_clustering(parts, k = 3)
 #'
+#'   # -------------------------------------------------------------
 #'   # Single k, ARI-weighted consensus
+#'  # -------------------------------------------------------------
 #'   if (requireNamespace("mclust", quietly = TRUE)) {
 #'     cons_w <- consensus_clustering(parts, k = 3,
 #'                                   consensus_method = "weighted_ari")
 #' }
-#'
-#' # Multiple k values
-#' parts_multi <- cluster_imputations(mild, method = "ward.D2", k = 2:4)
-#' cons_multi  <- consensus_clustering(parts_multi)
+#'   # -------------------------------------------------------------
+#'   # Multiple k values
+#'   # -------------------------------------------------------------
+#'   parts_multi <- cluster_imputations(mild, method = "ward.D2", k = 2:4)
+#'   cons_multi  <- consensus_clustering(parts_multi)
 #' }
 #' }
 #'
@@ -108,6 +122,9 @@ consensus_clustering <- function(partitions,
                                  k = NULL,
                                  cluster_method = "ward.D2",
                                  consensus_method = c("classic", "weighted_ari")) {
+
+  #Control verbose
+  verbose <- getOption("cclustr.verbose", FALSE)
 
   # --------------------------------------------------------
   # Supported methods for hclust consensus stage
@@ -175,15 +192,17 @@ consensus_clustering <- function(partitions,
     # --------------------------------------------------------
     # Compute weights
     # --------------------------------------------------------
+
+    # Initialize equal weights (classic consensus baseline)
     weights <- rep(1 / m, m)
     names(weights) <- names(partitions_k)
 
     if (consensus_method == "classic") {
       # do nothing; equal weights
-      message(paste0("Detected consensus method: classic (k = ", k_value, ")"))
+      if (verbose) message(paste0("Detected consensus method: classic (k = ", k_value, ")"))
 
     } else if (consensus_method == "weighted_ari") {
-      message(paste0("Detected consensus method: weighted_ari (k = ", k_value, ")"))
+      if (verbose) message(paste0("Detected consensus method: weighted_ari (k = ", k_value, ")"))
 
       if (!requireNamespace("mclust", quietly = TRUE)) {
         stop("Package 'mclust' is required for consensus_method = 'weighted_ari'.")
@@ -256,7 +275,7 @@ consensus_clustering <- function(partitions,
     }
 
     res <- .consensus_single_k(partitions, k)
-    message("Consensus clustering completed")
+    if (verbose) message("Consensus clustering completed")
     return(res)
   }
 
@@ -281,10 +300,10 @@ consensus_clustering <- function(partitions,
   names(results_by_k) <- names(partitions)
 
   for (idx in seq_along(partitions)) {
-    k_val <- if (!is.null(k_names) && length(k_values) == length(partitions)) k_values[idx] else k_values[idx]
+    k_val <- k_values[idx]
     results_by_k[[idx]] <- .consensus_single_k(partitions[[idx]], k_val)
   }
 
-  message("Consensus clustering completed for multiple k values")
+  if (verbose) message("Consensus clustering completed for multiple k values")
   return(results_by_k)
 }

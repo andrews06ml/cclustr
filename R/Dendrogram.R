@@ -12,7 +12,9 @@
 #'   integer specifying the number of clusters).
 #' @param rect Logical. If \code{TRUE} (default), colored rectangles are drawn
 #'   around the clusters via \code{\link[stats]{rect.hclust}}.
-#' @param k Numeric. It is the number of clusters selected for the dendrogram.
+#' @param k Integer. The number of clusters to display. Only required when
+#'   \code{consensus_result} contains results for multiple \code{k} values.
+#'   Ignored if a single-k result is passed directly.
 #' @param hang Numeric. The fraction of the plot height by which labels hang
 #'   below the rest of the plot. A negative value (default \code{-1}) causes
 #'   all labels to hang down from zero.
@@ -34,8 +36,22 @@
 #' \code{\link[graphics]{par}}.
 #'
 #' @examples
+#' # ------------------------------------------------------------
+#' # Example 1: consensus dendrogram with simulated results
+#' # ------------------------------------------------------------
+#'
+#' hc <- hclust(dist(matrix(rnorm(60), nrow = 20)), method = "ward.D2")
+#' cons <- list(hclust = hc, k = 3)
+#'
+#' plot_consensus_dendrogram(cons)
+#' plot_consensus_dendrogram(cons, rect = FALSE)
+#'
 #' \donttest{
-#' library(mice)
+#' # ------------------------------------------------------------
+#' # Example 2: Dendrogram with mice
+#' # ------------------------------------------------------------
+#'
+#' if (requireNamespace("mice", quietly = TRUE)) {
 #'
 #' imp    <- mice(nhanes, m = 5, printFlag = FALSE)
 #' mild   <- as_mild_list(imp)
@@ -57,6 +73,7 @@
 #'   plot_consensus_dendrogram(cons_multi[[paste0("k", k_i)]])
 #' }
 #' par(mfrow = c(1, 1))
+#' }
 #' }
 #'
 #' @seealso
@@ -90,15 +107,10 @@ plot_consensus_dendrogram <- function(consensus_result,
   # --------------------------------------------------------
   if (is_multi_k) {
 
-    if (is.null(k)) {
-      stop("Multiple k detected. Please specify k (e.g., k = 3).")
-    }
-
     k_name <- paste0("k", k)
 
-    if (!k_name %in% names(consensus_result)) {
+    if (!k_name %in% names(consensus_result))
       stop("Requested k not found in consensus_result.")
-    }
 
     consensus_result <- consensus_result[[k_name]]
   }
@@ -128,4 +140,5 @@ plot_consensus_dendrogram <- function(consensus_result,
                 k = consensus_result$k,
                 border = 2:6)
   }
+  invisible(NULL)
 }

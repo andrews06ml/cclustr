@@ -65,19 +65,41 @@
 #' \code{.mean_silhouette_from_diss}) are internal and not exported.
 #'
 #' @examples
-#' \donttest{
-#' library(mice)
+#' # ------------------------------------------------------------
+#' # Example 1: Basic validation with simulated partitions
+#' # ------------------------------------------------------------
+#' set.seed(123)
 #'
-#' imp    <- mice(nhanes, m = 5, printFlag = FALSE)
-#' mild   <- as_mild_list(imp)
+#' # Simulate partitions (3 imputations, k = 2)
+#' parts <- list(
+#'   imp1 = sample(1:2, 20, replace = TRUE),
+#'   imp2 = sample(1:2, 20, replace = TRUE),
+#'   imp3 = sample(1:2, 20, replace = TRUE)
+#' )
 #'
-#' # Multi-k pipeline
-#' parts  <- cluster_imputations(mild, method = "ward.D2", k = 2:5)
-#' cons   <- consensus_clustering(parts)
-#' val    <- validate_clustering(parts, cons)
+#' cons <- consensus_clustering(parts, k = 2)
+#' val  <- validate_clustering(parts, cons)
 #'
-#' # Inspect the validation table
 #' print(val)
+#'
+#' \donttest{
+#' # ------------------------------------------------------------
+#' # Example 2: Full pipeline with mice (multiple k)
+#' # ------------------------------------------------------------
+#' if (requireNamespace("mice", quietly = TRUE)) {
+#'
+#'   set.seed(123)
+#'
+#'   imp  <- mice::mice(mice::nhanes, m = 3, printFlag = FALSE)
+#'   mild <- as_mild_list(imp)
+#'
+#'   parts <- cluster_imputations(mild, method = "ward.D2", k = 2:3)
+#'   cons  <- consensus_clustering(parts)
+#'
+#'   val <- validate_clustering(parts, cons)
+#'
+#'   print(val)
+#' }
 #' }
 #'
 #' @seealso \code{\link{consensus_clustering}}, \code{\link{choose_best_clustering}}
@@ -100,6 +122,18 @@ validate_clustering <- function(partitions,
   }
 
   # --------------------------------------------------------
+  # First validation
+  # --------------------------------------------------------
+
+  if (!is.list(partitions) || length(partitions) == 0) {
+    stop("partitions must be a non-empty list.")
+  }
+
+  if (!is.list(consensus_results)) {
+    stop("consensus_results must be a list returned by consensus_clustering().")
+  }
+
+  # --------------------------------------------------------
   # Helpers
   # --------------------------------------------------------
 
@@ -109,7 +143,15 @@ validate_clustering <- function(partitions,
   }
 
   .mean_silhouette_from_diss <- function(diss, labels) {
-    sil <- cluster::silhouette(as.integer(labels), stats::as.dist(diss))
+    if (length(unique(labels)) < 2) return(NA_real_)
+
+    sil <- tryCatch(
+      cluster::silhouette(as.integer(labels), stats::as.dist(diss)),
+      error = function(e) NULL
+    )
+
+    if (is.null(sil)) return(NA_real_)
+
     mean(sil[, "sil_width"])
   }
 
@@ -127,8 +169,13 @@ validate_clustering <- function(partitions,
   }
 
   .ari_consensus_mean <- function(consensus, parts_list) {
-    mean(sapply(parts_list, function(z)
-      mclust::adjustedRandIndex(consensus, z)))
+    vals <- sapply(parts_list, function(z) {
+      if (length(unique(z)) < 2 || length(unique(consensus)) < 2) {
+        return(NA_real_)
+      }
+      mclust::adjustedRandIndex(consensus, z)
+    })
+    mean(vals, na.rm = TRUE)
   }
 
   # CH + Dunn from dissimilarity
@@ -199,9 +246,28 @@ validate_clustering <- function(partitions,
 
   .one_k <- function(parts_k, cres_k) {
 
+    if (is.null(cres_k$consensus) || is.null(cres_k$coassignment)) {
+      stop("Each consensus result must contain 'consensus' and 'coassignment'.")
+    }
+
     cons  <- cres_k$consensus
     coass <- cres_k$coassignment
     diss  <- 1 - coass
+
+    # Robust protection
+    if (length(unique(cons)) < 2) {
+      return(data.frame(
+        k = cres_k$k,
+        pac = NA_real_,
+        silhouette_mean = NA_real_,
+        ari_mean_between_imputations = NA_real_,
+        ari_consensus_mean = NA_real_,
+        calinski_harabasz_mean = NA_real_,
+        davies_bouldin_mean = NA_real_,
+        dunn_index = NA_real_,
+        stringsAsFactors = FALSE
+      ))
+    }
 
     chd <- .ch_dunn_from_diss(diss, cons)
 
@@ -228,6 +294,9 @@ validate_clustering <- function(partitions,
   is_multi_k <- all(sapply(partitions, is.list))
 
   if (!is_multi_k) {
+    if (!all(sapply(partitions, is.atomic))) {
+      stop("For single-k input, partitions must be a list of atomic vectors.")
+    }
     return(.one_k(partitions, consensus_results))
   }
 

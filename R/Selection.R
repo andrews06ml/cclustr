@@ -98,10 +98,56 @@
 #' informed decision.
 #'
 #' @examples
-#' \donttest{
-#' library(mice)
+#' # ------------------------------------------------------------
+#' # Example 1: Basic validation with simulated partitions
+#' # ------------------------------------------------------------
 #'
-#' imp   <- mice(nhanes, m = 5, printFlag = FALSE)
+#' # 1. Simulated validation table for k = 2, 3, 4
+#' val_table <- data.frame(
+#'   k                            = 2:4,
+#'   pac                          = c(0.15, 0.08, 0.20),
+#'   silhouette_mean              = c(0.42, 0.61, 0.38),
+#'   ari_mean_between_imputations = c(0.80, 0.91, 0.75),
+#'   ari_consensus_mean           = c(0.82, 0.93, 0.77),
+#'   calinski_harabasz_mean       = c(120,  198,  105),
+#'   davies_bouldin_mean          = c(0.85, 0.54, 0.97),
+#'   dunn_index                   = c(0.30, 0.48, 0.27)
+#' )
+#'
+#' # 2. Simulated consensus result for each k
+#' set.seed(123)
+#' n <- 30
+#' make_cons <- function(k) {
+#'   list(
+#'     k            = k,
+#'     consensus    = sample(seq_len(k), n, replace = TRUE),
+#'     coassignment = matrix(runif(n * n), n, n)
+#'   )
+#' }
+#' cons_results <- list(k2 = make_cons(2),
+#'                      k3 = make_cons(3),
+#'                      k4 = make_cons(4))
+#'
+#' # 3. Default selection (equal weights)
+#' best <- choose_best_clustering(val_table, cons_results)
+#' best$best_k
+#' head(best$scores_table)
+#'
+#'
+#' # 4. Custom weights
+#' best_custom <- choose_best_clustering(
+#'   val_table, cons_results,
+#'   weights = c(pac = 3, silhouette = 1, ari_between = 3,
+#'               ari_consensus = 3, ch = 1, db = 1, dunn = 1)
+#' )
+#'
+#' \donttest{
+#' # ------------------------------------------------------------
+#' # Example 2: Full pipeline with mice
+#' # ------------------------------------------------------------
+#' if (requireNamespace("mice", quietly = TRUE)) {
+#'
+#' imp   <- mice::mice(mice::nhanes, m = 5, printFlag = FALSE)
 #' mild  <- as_mild_list(imp)
 #' parts <- cluster_imputations(mild, method = "ward.D2", k = 2:5)
 #' cons  <- consensus_clustering(parts)
@@ -126,6 +172,7 @@
 #'                                             ari_between = 3, ari_consensus = 3,
 #'                                             ch = 1, db = 1, dunn = 1))
 #' }
+#' }
 #'
 #' @references
 #' Pihur, V., Datta, S., & Datta, S. (2007). Weighted rank aggregation
@@ -144,37 +191,65 @@ choose_best_clustering <- function(validation_table,
                                    tie_breaker      = c("silhouette", "pac", "dunn", "ch", "db",
                                                         "ari_between", "ari_consensus")) {
 
+  #Control verbosity
+  verbose <- getOption("cclustr.verbose", FALSE)
+
   tie_breaker <- match.arg(tie_breaker)
 
-  # ---- required columns
+  # Validate prefer_stability type
+  if (!is.null(prefer_stability) && !is.logical(prefer_stability))
+    stop("'prefer_stability' must be TRUE, FALSE, or NULL.")
+
+  # Required columns
   req  <- c("k", "pac", "silhouette_mean",
             "ari_mean_between_imputations", "ari_consensus_mean",
             "calinski_harabasz_mean", "davies_bouldin_mean", "dunn_index")
+
   miss <- setdiff(req, names(validation_table))
   if (length(miss) > 0) {
     stop(paste0("validation_table is missing: ", paste(miss, collapse = ", ")))
   }
 
-  # ---- default weights
+  # default weights
   if (is.null(weights)) {
     if (isTRUE(prefer_stability)) {
-      message("Weighting strategy: stability-focused")
+      if (verbose) message("Weighting strategy: stability-focused")
       weights <- c(pac = 2, silhouette = 1.5,
                    ari_between = 2, ari_consensus = 2,
                    ch = 1, db = 1, dunn = 1)
 
     } else if (isFALSE(prefer_stability)) {
-      message("Weighting strategy: compactness-focused")
+      if (verbose) message("Weighting strategy: compactness-focused")
       weights <- c(pac = 1, silhouette = 2,
                    ari_between = 1, ari_consensus = 1,
                    ch = 2, db = 2, dunn = 2)
 
     } else {
-      message("Weighting strategy: equal weights")
+      if (verbose) message("Weighting strategy: equal weights")
       weights <- c(pac = 1, silhouette = 1,
                    ari_between = 1, ari_consensus = 1,
                    ch = 1, db = 1, dunn = 1)
     }
+  } else {
+    # Validate user-supplied weights
+    expected_w <- c("pac", "silhouette", "ari_between", "ari_consensus",
+                    "ch", "db", "dunn")
+    unknown_w  <- setdiff(names(weights), expected_w)
+    missing_w  <- setdiff(expected_w, names(weights))
+
+    if (length(unknown_w) > 0)
+      warning("Unknown names in 'weights' will be ignored: ",
+              paste(unknown_w, collapse = ", "))
+    if (length(missing_w) > 0)
+      warning("Metrics without a weight will be treated as 0: ",
+              paste(missing_w, collapse = ", "))
+    if (any(weights < 0, na.rm = TRUE))
+      stop("All values in 'weights' must be >= 0.")
+    if (sum(weights, na.rm = TRUE) == 0)
+      stop("At least one weight in 'weights' must be positive.")
+
+    # Fill missing weight names with zero
+    weights[missing_w] <- 0
   }
 
   .rank_best1 <- function(x, higher_is_better = TRUE) {
@@ -193,6 +268,7 @@ choose_best_clustering <- function(validation_table,
   r_db   <- .rank_best1(vt$davies_bouldin_mean,          higher_is_better = FALSE)
   r_dunn <- .rank_best1(vt$dunn_index,                   higher_is_better = TRUE)
 
+  # Compute weighted average rank per k, renormalizing over available metrics
   score <- numeric(nrow(vt))
   for (i in seq_len(nrow(vt))) {
     vals <- c(pac           = r_pac[i],
@@ -239,7 +315,7 @@ choose_best_clustering <- function(validation_table,
     stop("Could not retrieve consensus labels/coassignment for the selected k from consensus_results.")
   }
 
-  message(paste("Best k selected:", best_k))
+  message("Best k selected: ", best_k)
 
   list(
     best_k                = best_k,

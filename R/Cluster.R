@@ -32,10 +32,22 @@
 #'   clusters. If a vector is provided, clustering is performed for each
 #'   value of \code{k}.
 #'
-#' @param scale_data Logical. If \code{TRUE} (default), numeric columns are
-#'   standardized to zero mean and unit variance prior to clustering.
-#'   This option is ignored for methods that do not require scaling,
-#'   such as \code{"kmodes"}.
+#' @param scale_data Character string specifying the scaling strategy for
+#'   numeric variables. Options are:
+#'   \itemize{
+#'     \item \code{"global"}: (default) variables are scaled using global
+#'           mean and standard deviation computed across all imputations.
+#'           Ensures comparability between datasets and is recommended for
+#'           consensus clustering.
+#'     \item \code{"within"}: each imputed dataset is scaled independently
+#'           using its own mean and standard deviation. This option may be
+#'           useful for exploratory analyses where the goal is to preserve
+#'           the internal structure of each imputation. However, it can
+#'           introduce inconsistencies in distance scales across datasets,
+#'           potentially affecting the stability and interpretation of
+#'           consensus clustering results.
+#'     \item \code{"none"}: no scaling is applied.
+#'   }
 #'
 #' @param ... Additional arguments passed to the underlying clustering
 #'   function (\code{kmeans}, \code{cluster::pam}, \code{e1071::cmeans},
@@ -78,7 +90,9 @@
 #' compatibility with categorical and mixed-data clustering methods.
 #'
 #' @examples
-#' # Example with numeric data
+#' # ------------------------------------------------------------
+#' # Example 1: with numeric data
+#' # ------------------------------------------------------------
 #' set.seed(123)
 #'
 #' # Simulate 3 imputed datasets (list of data frames)
@@ -97,7 +111,9 @@
 #' res_kmeans <- cluster_imputations(imp_list, method = "kmeans", k = 2)
 #' str(res_kmeans)
 #'
-#' # Example with mixed data (numeric + categorical)
+#' # ------------------------------------------------------------
+#' # Example 2: with mixed data (numeric + categorical)
+#' # ------------------------------------------------------------
 #' imp_list_mixed <- replicate(2, {
 #'   data.frame(
 #'     x = rnorm(10),
@@ -114,6 +130,9 @@
 #' str(res_pam)
 #'
 #'\donttest{
+#' # ------------------------------------------------------------
+#' # Example 3: mixed data (numeric + categorical) with mice
+#' # ------------------------------------------------------------
 #'if (requireNamespace("mice", quietly = TRUE)) {
 #'
 #'  # Prepare original data
@@ -125,12 +144,12 @@
 #'  mild  <- as_mild_list(imp)
 #'
 #'  # Single k with PAM with Gower distance (mixed data)
-#'  parts_gower <- cluster_imputations(mild_scaled, method = "pam", k = 3,
+#'  parts_gower <- cluster_imputations(mild, method = "pam", k = 3,
 #'                                     metric = "gower")
 #'  parts_gower
 #'
 #'  # Multiple k with Gower distance (mixed data)
-#'  parts_multi <- cluster_imputations(mild_scaled, method = "pam", k = 2:4,
+#'  parts_multi <- cluster_imputations(mild, method = "pam", k = 2:4,
 #'                                     metric = "gower")
 #'  parts_multi
 #'}
@@ -142,11 +161,14 @@
 cluster_imputations <- function(imp_list,
                                 method = "ward.D2",
                                 k,
-                                scale_data = TRUE,
+                                scale_data = c("global", "within", "none"),
                                 ...) {
+
+  scale_data <- match.arg(scale_data)
   # Capture user-specified arguments for downstream clustering functions.
   # These arguments are method-dependent and forwarded internally.
   extra_args <- list(...)
+
 
   # --------------------------------------------------------
   # Supported methods
@@ -162,24 +184,52 @@ cluster_imputations <- function(imp_list,
   }
 
   # --------------------------------------------------------
-  # Optional escalation
+  # Optional escalation - Scaling strategy
   # --------------------------------------------------------
 
   # Disable scaling for methods that do not require it
-  if (method %in% c("kmodes") && scale_data) {
+  if (method %in% c("kmodes") && scale_data != "none") {
     warning("Scaling disabled for method = 'kmodes'.")
-    scale_data <- FALSE
+    scale_data <- "none"
   }
 
-  database <- if (scale_data) {
-    lapply(imp_list, function(df) {
-      num_cols <- sapply(df, is.numeric)
-      df[, num_cols] <- scale(df[, num_cols])
-      df
-    })
-  } else {
-    imp_list
-  }
+    # Identify numeric columns
+    num_cols <- sapply(imp_list[[1]], is.numeric)
+
+    if (!any(num_cols) && scale_data != "none") {
+      warning("No numeric variables found. Scaling skipped.")
+      database <- imp_list
+
+    } else if (scale_data == "none") {
+
+      database <- imp_list
+
+    } else if (scale_data == "within"){
+
+      # Scale each imputation independently
+      database <- lapply(imp_list, function(df) {
+        df[, num_cols] <- scale(df[, num_cols])
+        df
+      })
+
+    } else if (scale_data == "global") {
+
+      # Stack all imputations to compute global parameters
+      stacked <- do.call(rbind, imp_list)
+
+      means <- colMeans(stacked[, num_cols, drop = FALSE])
+      sds   <- apply(stacked[, num_cols, drop = FALSE], 2, sd)
+
+      # Avoid division by zero
+      sds[sds == 0] <- 1
+
+      # Apply same scaling to all imputations
+      database <- lapply(imp_list, function(df) {
+        df[, num_cols] <- sweep(df[, num_cols, drop = FALSE], 2, means, "-")
+        df[, num_cols] <- sweep(df[, num_cols, drop = FALSE], 2, sds, "/")
+        df
+      })
+    }
 
   # --------------------------------------------------------
   # Ensure categorical variables are factors
@@ -205,15 +255,29 @@ cluster_imputations <- function(imp_list,
   # -------------------------------------------------------
   # Validation by method
   # --------------------------------------------------------
-  if (all_factors && method == "kprototypes") {
-    warning(
-      "All variables are categorical. Switching to 'kmodes'."
-    )
-    method <- "kmodes"
+  if (all_factors) {
+
+    if (method == "kprototypes") {
+      warning(
+        "All variables are categorical. Switching to 'kmodes'."
+      )
+      method <- "kmodes"
+    }
+
+    if (method %in% numeric_methods) {
+      stop(
+        "All variables are categorical. Use 'kmodes' or 'pam' ",
+        "(with metric = 'gower') for categorical data."
+      )
+    }
   }
 
-  if (method == "kprototypes" && scale_data && !all_factors) {
-    warning("Scaling numeric variables may affect k-prototypes clustering.")
+  if (method == "kprototypes" && scale_data == "none" && !all_factors) {
+    warning(
+      "No scaling applied. In k-prototypes, variables with larger numeric ",
+      "scales may dominate the clustering solution. Consider using ",
+      "scale_data = 'global' for improved balance and comparability."
+    )
   }
 
   if (has_factors) {

@@ -44,8 +44,29 @@
 #' together.
 #'
 #' @examples
+#' # ------------------------------------------------------------
+#' # Example 1: Consensus matrix with simulated consensus result
+#' # ------------------------------------------------------------
+#' set.seed(123)
+#' n <- 20
+#' true_labels <- rep(1:2, each = n / 2)
+#' M <- matrix(0.1, n, n)
+#' for (i in seq_len(n))
+#'   for (j in seq_len(n))
+#'     if (true_labels[i] == true_labels[j]) M[i, j] <- 0.9
+#'
+#' cons <- list(coassignment = M,
+#'              consensus    = true_labels,
+#'              k            = 2)
+#'
+#' plot_consensus_matrix(cons, viridis_option = "A")
+#'
 #' \donttest{
-#' library(mice)
+#' # ------------------------------------------------------------
+#' # Example 2: Consensus matrix with mice
+#' # ------------------------------------------------------------
+#'
+#' if (requireNamespace("mice", quietly = TRUE)) {
 #'
 #' imp   <- mice(nhanes, m = 5, printFlag = FALSE)
 #' mild  <- as_mild_list(imp)
@@ -64,6 +85,7 @@
 #'   plot_consensus_matrix(cons, viridis_option = opt)
 #' }
 #' par(mfrow = c(1, 1))
+#' }
 #' }
 #'
 #' @seealso
@@ -101,12 +123,16 @@ plot_consensus_matrix <- function(consensus_result,
 
   graphics::par(mar = c(4, 4, 2, 2))
 
+  # Validate Viridis options
+  if (!viridis_option %in% c("A", "B", "C", "D", "E", "F", "G", "H"))
+    stop("'viridis_option' must be one of 'A', 'B', 'C', 'D', 'E', 'F', 'G', or 'H'.")
+
   graphics::image(1:nrow(M_ord), 1:ncol(M_ord), t(M_ord[nrow(M_ord):1, ]),
         col   = viridisLite::viridis(100, option = viridis_option),
         axes  = FALSE,
-        xlab  = "Observaciones",
-        ylab  = "Observaciones",
-        main  = paste("Matriz de consenso (k =", consensus_result$k, ")"))
+        xlab  = "Observations",
+        ylab  = "Observations",
+        main  = paste("Consensus matrix (k =", consensus_result$k, ")"))
 
   if (show_labels) {
     graphics::axis(1, at = seq_len(nrow(M_ord)), labels = ord,      las = 2, cex.axis = 0.4)
@@ -117,4 +143,5 @@ plot_consensus_matrix <- function(consensus_result,
   }
 
   graphics::box()
+  invisible(NULL)
 }
