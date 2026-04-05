@@ -1,6 +1,6 @@
 Package: cclustr
 Title: Consensus Clustering Methods for Multiple Imputed Data
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
     person("Anhuar", "Duran Mendoza", email = "aduranm@unbosque.edu.co", role = c("aut", "cre")),
     person("Andres", "Montenegro Lemus", email = "afmontenegro@unbosque.edu.co", role = "aut"),
