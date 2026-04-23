@@ -575,7 +575,6 @@ cluster_imputations <- function(imp_list,
   if (length(k) > 1) {
 
     if (method %in% hierarchical_methods) {
-      # Calcular dendrograma UNA SOLA VEZ por imputación
       hc_list <- lapply(database, function(df) {
         d <- .compute_distance(df)
         stats::hclust(d, method = method)
