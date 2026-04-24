@@ -9,6 +9,9 @@ run_mi_clustering(
   method = "ward.D2",
   k,
   scale_data = "global",
+  distance = "euclidean",
+  dist_fun = NULL,
+  dist_args = list(),
   consensus_method = c("classic", "weighted_ari"),
   cluster_method_consensus = "ward.D2",
   pac_lower = 0.1,
@@ -49,6 +52,27 @@ scaled independently), and \code{"none"} (no scaling applied). Scaling
 is automatically disabled for \code{distance = "gower"},
 \code{"jaccard"}, or \code{"simple_matching"}, and for
 \code{method = "kmodes"} and \code{"kprototypes"}.}
+
+\item{distance}{A character string specifying the distance metric used for
+hierarchical clustering and \code{method = "pam"}. Options are
+\code{"euclidean"} (default), \code{"manhattan"}, \code{"gower"}
+(via \code{cluster::daisy()}, supports mixed data), \code{"jaccard"}
+(binary data, requires \pkg{proxy}), \code{"simple_matching"} (binary
+data, requires \pkg{proxy}), and \code{"custom"} (user-defined function
+via \code{dist_fun}). Ignored for \code{method = "kmeans"},
+\code{"fuzzy"}, \code{"mclust"}, \code{"kmodes"}, and
+\code{"kprototypes"}, which compute distances internally.}
+
+\item{dist_fun}{A function that takes a \code{data.frame} and returns a
+\code{dist} object. Required when \code{distance = "custom"};
+ignored otherwise.}
+
+\item{dist_args}{A named list of additional arguments passed to the
+distance function. For \code{distance = "gower"}, forwarded to
+\code{cluster::daisy()}; for \code{"jaccard"} or
+\code{"simple_matching"}, to \code{proxy::dist()}; for
+\code{"euclidean"} or \code{"manhattan"}, to \code{stats::dist()};
+also for \code{"custom"}. Default is \code{list()}.}
 
 \item{consensus_method}{A character string specifying the method used to
 build the co-assignment matrix. \code{"classic"} assigns equal weight to
@@ -93,27 +117,6 @@ is a single value.}
 function via \code{\link{cluster_imputations}}: \code{stats::kmeans},
 \code{e1071::cmeans}, \code{mclust::Mclust}, \code{klaR::kmodes}, or
 \code{clustMixType::kproto}. Not used for \code{method = "pam"}.}
-
-\item{distance}{A character string specifying the distance metric used for
-hierarchical clustering and \code{method = "pam"}. Options are
-\code{"euclidean"} (default), \code{"manhattan"}, \code{"gower"}
-(via \code{cluster::daisy()}, supports mixed data), \code{"jaccard"}
-(binary data, requires \pkg{proxy}), \code{"simple_matching"} (binary
-data, requires \pkg{proxy}), and \code{"custom"} (user-defined function
-via \code{dist_fun}). Ignored for \code{method = "kmeans"},
-\code{"fuzzy"}, \code{"mclust"}, \code{"kmodes"}, and
-\code{"kprototypes"}, which compute distances internally.}
-
-\item{dist_fun}{A function that takes a \code{data.frame} and returns a
-\code{dist} object. Required when \code{distance = "custom"};
-ignored otherwise.}
-
-\item{dist_args}{A named list of additional arguments passed to the
-distance function. For \code{distance = "gower"}, forwarded to
-\code{cluster::daisy()}; for \code{"jaccard"} or
-\code{"simple_matching"}, to \code{proxy::dist()}; for
-\code{"euclidean"} or \code{"manhattan"}, to \code{stats::dist()};
-also for \code{"custom"}. Default is \code{list()}.}
 }
 \value{
 An object of class \code{"mi_clustering_result"}: a named list
