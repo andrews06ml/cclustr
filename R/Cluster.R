@@ -342,14 +342,14 @@ cluster_imputations <- function(imp_list,
   if (distance %in% c("gower", "jaccard", "simple_matching")) {
     if (scale_data != "none") {
       if (distance == "gower") {
-        message(
+        warning(
           "The 'scale_data' parameter is ignored for distance = 'gower'. ",
           "Numeric variables are instead normalized using global min/max ",
           "computed across all imputations to ensure cross-imputation ",
           "comparability before computing Gower distances."
         )
       } else {
-        message(
+        warning(
           "The 'scale_data' parameter is ignored for distance = '", distance, "'. ",
           "This metric handles normalization internally."
         )
