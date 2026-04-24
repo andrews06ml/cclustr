@@ -2,9 +2,9 @@ Package: cclustr
 Title: Consensus Clustering Methods for Multiple Imputed Data
 Version: 0.1.1
 Authors@R: c(
-    person("Anhuar", "Duran Mendoza", email = "aduranm@unbosque.edu.co", role = c("aut", "cre")),
-    person("Andres", "Montenegro Lemus", email = "afmontenegro@unbosque.edu.co", role = "aut"),
-    person("Mario", "Pacheco Lopez", email = "mpachecol@unbosque.edu.co", role = "aut")
+    person("Anhuar", "Duran Mendoza", email = "asteyduran15@gmail.com", role = c("aut", "cre")),
+    person("Andres", "Montenegro Lemus", email = "andresfemole@gmail.com", role = "aut"),
+    person("Mario", "Pacheco Lopez", email = "mariopachecolopez@gmail.com", role = "aut")
   )
 Description: Provides tools for performing consensus clustering on multiple 
     imputed datasets. The package supports a range of clustering algorithms 
