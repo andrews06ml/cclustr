@@ -29,7 +29,8 @@ Imports:
     stats,
     viridisLite,
     klaR,
-    clustMixType
+    clustMixType,
+    proxy
 Suggests:
     mclust,
     mice
