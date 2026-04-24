@@ -9,6 +9,9 @@ cluster_imputations(
   method = "ward.D2",
   k,
   scale_data = c("global", "within", "none"),
+  distance = c("euclidean", "manhattan", "gower", "jaccard", "simple_matching", "custom"),
+  dist_fun = NULL,
+  dist_args = list(),
   ...
 )
 }
@@ -25,11 +28,12 @@ Additional options are:
 \itemize{
 \item \code{"kmeans"}: k-means clustering for numeric data.
 \item \code{"pam"}: partitioning around medoids; supports mixed data
-when used with \code{metric = "gower"}.
+when used with \code{distance = "gower"}.
 \item \code{"fuzzy"}: fuzzy c-means clustering.
 \item \code{"mclust"}: model-based clustering via Gaussian mixtures.
 \item \code{"kmodes"}: clustering for purely categorical data.
-\item \code{"kprototypes"}: clustering for mixed data (numeric and categorical).
+\item \code{"kprototypes"}: clustering for mixed data (numeric and
+categorical).
 }
 Default is \code{"ward.D2"}.}
 
@@ -38,28 +42,70 @@ clusters. If a vector is provided, clustering is performed for each
 value of \code{k}.}
 
 \item{scale_data}{Character string specifying the scaling strategy for
-numeric variables. Options are:
+continuous numeric variables (binary variables coded as 0/1 are
+automatically excluded from scaling). Options are:
 \itemize{
-\item \code{"global"}: (default) variables are scaled using global
-mean and standard deviation computed across all imputations.
-Ensures comparability between datasets and is recommended for
-consensus clustering.
+\item \code{"global"}: (default) variables are scaled using pooled
+mean and standard deviation computed across all imputations
+without stacking them in memory (combinatorial variance formula).
+Ensures comparability of distance scales between datasets and
+is recommended for consensus clustering.
 \item \code{"within"}: each imputed dataset is scaled independently
-using its own mean and standard deviation. This option may be
-useful for exploratory analyses where the goal is to preserve
-the internal structure of each imputation. However, it can
-introduce inconsistencies in distance scales across datasets,
-potentially affecting the stability and interpretation of
-consensus clustering results.
+using its own mean and standard deviation. Useful for
+exploratory analyses but may introduce inconsistencies in
+distance scales across datasets.
 \item \code{"none"}: no scaling is applied.
-}}
+}
+Scaling is automatically disabled for \code{distance = "gower"},
+\code{"jaccard"}, or \code{"simple_matching"}, and for
+\code{method = "kmodes"} and \code{"kprototypes"}, as these handle
+variable scales internally.}
+
+\item{distance}{A character string specifying the distance metric used for
+hierarchical clustering and \code{method = "pam"}. Options are:
+\itemize{
+\item \code{"euclidean"}: (default) standard Euclidean distance.
+Suitable for continuous numeric data after scaling.
+\item \code{"manhattan"}: sum of absolute differences. Suitable for
+continuous numeric data; more robust to outliers than Euclidean.
+\item \code{"gower"}: Gower distance via \code{cluster::daisy()}.
+Supports mixed data types (numeric, categorical, binary).
+When used with hierarchical clustering, numeric variables are
+normalized using global min/max computed across all imputations,
+ensuring cross-imputation comparability. Requires package
+\pkg{cluster}.
+\item \code{"jaccard"}: Jaccard dissimilarity. Requires all variables
+to be binary (0/1 or two-level factor). Requires package
+\pkg{proxy}.
+\item \code{"simple_matching"}: Simple Matching Coefficient (SMC).
+Requires all variables to be binary. Requires package
+\pkg{proxy}.
+\item \code{"custom"}: user-defined distance function supplied via
+\code{dist_fun}. Must return an object of class \code{dist}.
+}
+Ignored for \code{method = "kmeans"}, \code{"fuzzy"}, \code{"mclust"},
+\code{"kmodes"}, and \code{"kprototypes"}, which compute distances
+internally.
+
+For \code{method = "pam"}, all distance options are fully supported
+as PAM operates on a precomputed dissimilarity matrix.}
+
+\item{dist_fun}{A function that takes a \code{data.frame} and returns a
+\code{dist} object. Required when \code{distance = "custom"};
+ignored otherwise.}
+
+\item{dist_args}{A named list of additional arguments passed to the distance
+function. For \code{distance = "gower"}, arguments are forwarded to
+\code{cluster::daisy()}; for \code{distance = "jaccard"} or
+\code{"simple_matching"}, to \code{proxy::dist()}; for
+\code{distance = "euclidean"} or \code{"manhattan"}, to
+\code{stats::dist()}; also for \code{distance = "custom"}. Default is \code{list()}.}
 
 \item{...}{Additional arguments passed to the underlying clustering
-function (\code{kmeans}, \code{cluster::pam}, \code{e1071::cmeans},
+function: \code{stats::kmeans}, \code{e1071::cmeans},
 \code{mclust::Mclust}, \code{klaR::kmodes}, or
-\code{clustMixType::kproto}).
-For \code{method = "pam"}, passing \code{metric = "gower"} enables
-Gower distance for mixed data types.}
+\code{clustMixType::kproto}. Not used for \code{method = "pam"}, which
+operates on a precomputed dissimilarity matrix.}
 }
 \value{
 \itemize{
@@ -77,94 +123,125 @@ Applies a clustering algorithm to each completed dataset in a standardized
 imputation list (as produced by \code{\link{as_mild_list}}). Supports
 hierarchical clustering, k-means, PAM, fuzzy c-means, model-based clustering,
 k-modes (for categorical data), and k-prototypes (for mixed data).
-Accepts a single value of \code{k} or a range, and optionally scales the
-data prior to clustering.
+Accepts a single value of \code{k} or a range, optionally scales the data
+prior to clustering, and supports multiple distance metrics including
+Gower, Jaccard, Simple Matching Coefficient, and user-defined distances.
 }
 \details{
+\strong{Scaling strategy and cross-imputation comparability:}
+
+For methods that rely on Euclidean or Manhattan distances
+(\code{"kmeans"}, \code{"fuzzy"}, \code{"mclust"}, hierarchical with
+\code{distance = "euclidean"} or \code{"manhattan"}), \code{scale_data =
+"global"} is strongly recommended. It computes the pooled mean and
+standard deviation across all imputations using the combinatorial variance
+formula — without creating a stacked copy of the data in memory — and
+applies the same transformation to every imputation. This ensures that
+distances are on the same scale across datasets, which is essential for
+a meaningful co-assignment matrix.
+
+Binary variables coded as 0/1 numeric are automatically excluded from
+scaling because standardizing them loses their binary semantics.
+
+\strong{Gower distance and global normalization:}
+
+Gower distance normalizes each numeric variable by its range. When
+computed independently per imputation, different imputations may produce
+slightly different ranges, leading to incomparable distance scales. When
+\code{distance = "gower"} is used with hierarchical clustering or PAM,
+the function pre-normalizes numeric variables using global min/max
+computed across all imputations (without stacking), so that Gower
+distances are on a consistent scale across datasets. Categorical and
+factor variables are left untouched and handled normally by
+\code{cluster::daisy()}. Additional arguments to \code{cluster::daisy()}
+can be passed via \code{dist_args}.
+
+\strong{Hierarchical clustering optimization:}
+
 When \code{method} is hierarchical and \code{k} is a vector, the
-dendrogram is computed only once per imputed dataset and then cut at
-each requested \code{k}, which improves efficiency considerably.
+distance matrix and dendrogram are computed only once per imputed dataset
+and then cut at each requested \code{k}, which avoids redundant
+computation.
 
-For \code{method = "pam"} with \code{metric = "gower"}, Gower distance
-is computed via \code{cluster::daisy()} and passed as a dissimilarity
-matrix, making the function suitable for datasets with mixed variable
-types (numeric and categorical).
-
-The choice of clustering method should be consistent with the data types:
+\strong{Data type compatibility:}
 \itemize{
-\item Numeric-only datasets: methods such as \code{"kmeans"},
-hierarchical clustering, \code{"fuzzy"}, and \code{"mclust"}.
-\item Categorical datasets: \code{"kmodes"}.
-\item Mixed datasets (numeric and categorical): \code{"pam"} with
-\code{metric = "gower"} or \code{"kprototypes"}.
+\item Numeric-only: hierarchical, \code{"kmeans"}, \code{"fuzzy"},
+\code{"mclust"}.
+\item Categorical-only: \code{"kmodes"}.
+\item Mixed (numeric + categorical): \code{"pam"} with
+\code{distance = "gower"} or \code{"kprototypes"}.
+\item Binary-only: hierarchical with \code{distance = "jaccard"} or
+\code{"simple_matching"}.
 }
 
-Character variables are internally converted to factors to ensure
-compatibility with categorical and mixed-data clustering methods.
+Character variables are internally converted to factors.
 }
 \examples{
 # ------------------------------------------------------------
-# Example 1: with numeric data
+# Example 1: Numeric data, hierarchical clustering
 # ------------------------------------------------------------
 set.seed(123)
-
-# Simulate 3 imputed datasets (list of data frames)
 imp_list <- replicate(3, {
-  data.frame(
-    x = rnorm(10),
-    y = rnorm(10)
-  )
+  data.frame(x = rnorm(20), y = rnorm(20))
 }, simplify = FALSE)
 
-# Hierarchical clustering
+# Single k, global scaling, euclidean distance (default)
 res <- cluster_imputations(imp_list, method = "ward.D2", k = 2)
 str(res)
 
-# k-means clustering
-res_kmeans <- cluster_imputations(imp_list, method = "kmeans", k = 2)
-str(res_kmeans)
+# Range of k, manhattan distance
+res_multi <- cluster_imputations(imp_list, method = "ward.D2",
+                                 k = 2:4, distance = "manhattan")
+str(res_multi)
 
 # ------------------------------------------------------------
-# Example 2: with mixed data (numeric + categorical)
+# Example 2: Mixed data, PAM with Gower distance
 # ------------------------------------------------------------
-imp_list_mixed <- replicate(2, {
+imp_mixed <- replicate(3, {
   data.frame(
-    x = rnorm(10),
-    y = factor(sample(letters[1:3], 10, replace = TRUE))
+    x    = rnorm(20),
+    grup = factor(sample(letters[1:3], 20, replace = TRUE))
   )
 }, simplify = FALSE)
 
-res_pam <- cluster_imputations(
-  imp_list_mixed,
-  method = "pam",
-  k = 2,
-  metric = "gower"
-)
+res_pam <- cluster_imputations(imp_mixed, method = "pam",
+                               k = 2, distance = "gower")
 str(res_pam)
 
-\donttest{
 # ------------------------------------------------------------
-# Example 3: mixed data (numeric + categorical) with mice
+# Example 3: Binary data, Jaccard distance
+# ------------------------------------------------------------
+imp_bin <- replicate(3, {
+  data.frame(
+    a = sample(0:1, 20, replace = TRUE),
+    b = sample(0:1, 20, replace = TRUE),
+    c = sample(0:1, 20, replace = TRUE)
+  )
+}, simplify = FALSE)
+
+\donttest{
+if (requireNamespace("proxy", quietly = TRUE)) {
+  res_jac <- cluster_imputations(imp_bin, method = "ward.D2",
+                                 k = 2, distance = "jaccard")
+  str(res_jac)
+}
+
+# ------------------------------------------------------------
+# Example 4: Full pipeline with mice
 # ------------------------------------------------------------
 if (requireNamespace("mice", quietly = TRUE)) {
 
- # Prepare original data
- df_pre <- mice::nhanes
- df_pre$age <- factor(df_pre$age)
- df_pre$hyp <- factor(df_pre$hyp)
+  df_pre       <- mice::nhanes
+  df_pre$age   <- factor(df_pre$age)
+  df_pre$hyp   <- factor(df_pre$hyp)
 
- imp   <- mice::mice(df_pre, m = 3, printFlag = FALSE)
- mild  <- as_mild_list(imp)
+  imp  <- mice::mice(df_pre, m = 3, printFlag = FALSE)
+  mild <- as_mild_list(imp)
 
- # Single k with PAM with Gower distance (mixed data)
- parts_gower <- cluster_imputations(mild, method = "pam", k = 3,
-                                    metric = "gower")
- parts_gower
-
- # Multiple k with Gower distance (mixed data)
- parts_multi <- cluster_imputations(mild, method = "pam", k = 2:4,
-                                    metric = "gower")
- parts_multi
+  # PAM + Gower with global range normalization
+  parts <- cluster_imputations(mild, method = "pam",
+                               k = 2:4, distance = "gower")
+  str(parts)
 }
 }
 

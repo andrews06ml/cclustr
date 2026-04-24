@@ -32,7 +32,8 @@ to each imputed dataset. For hierarchical clustering, accepted values are
 \code{"ward.D"}, \code{"ward.D2"}, \code{"single"}, \code{"complete"},
 \code{"average"}, \code{"centroid"}, \code{"median"}, and
 \code{"mcquitty"}. Additional options are \code{"kmeans"}, \code{"pam"},
-\code{"fuzzy"}, and \code{"mclust"}. Default is \code{"ward.D2"}.}
+\code{"fuzzy"}, \code{"mclust"}, \code{"kmodes"}, and
+\code{"kprototypes"}. Default is \code{"ward.D2"}.}
 
 \item{k}{A single integer or an integer vector specifying the number(s) of
 clusters to evaluate. If a single value is supplied, the pipeline skips
@@ -41,10 +42,13 @@ directly. If a vector is supplied, all values are evaluated and the
 optimal \code{k} is selected via weighted rank aggregation.}
 
 \item{scale_data}{A character string specifying how numeric columns are
-standardized prior to clustering. Accepted values are \code{"none"}
-(no scaling), \code{"by_imputation"} (each imputed dataset scaled
-independently), and \code{"global"} (all imputations scaled together
-using pooled mean and standard deviation). Default is \code{"global"}.}
+standardized prior to clustering. Accepted values are \code{"global"}
+(default, pooled mean and standard deviation computed across all
+imputations without stacking), \code{"within"} (each imputed dataset
+scaled independently), and \code{"none"} (no scaling applied). Scaling
+is automatically disabled for \code{distance = "gower"},
+\code{"jaccard"}, or \code{"simple_matching"}, and for
+\code{method = "kmodes"} and \code{"kprototypes"}.}
 
 \item{consensus_method}{A character string specifying the method used to
 build the co-assignment matrix. \code{"classic"} assigns equal weight to
@@ -86,9 +90,30 @@ to break ties during \code{k} selection. One of \code{"silhouette"}
 is a single value.}
 
 \item{...}{Additional arguments passed to the underlying clustering
-function via \code{\link{cluster_imputations}}. For example,
-\code{metric = "gower"} enables Gower distance when
-\code{method = "pam"}.}
+function via \code{\link{cluster_imputations}}: \code{stats::kmeans},
+\code{e1071::cmeans}, \code{mclust::Mclust}, \code{klaR::kmodes}, or
+\code{clustMixType::kproto}. Not used for \code{method = "pam"}.}
+
+\item{distance}{A character string specifying the distance metric used for
+hierarchical clustering and \code{method = "pam"}. Options are
+\code{"euclidean"} (default), \code{"manhattan"}, \code{"gower"}
+(via \code{cluster::daisy()}, supports mixed data), \code{"jaccard"}
+(binary data, requires \pkg{proxy}), \code{"simple_matching"} (binary
+data, requires \pkg{proxy}), and \code{"custom"} (user-defined function
+via \code{dist_fun}). Ignored for \code{method = "kmeans"},
+\code{"fuzzy"}, \code{"mclust"}, \code{"kmodes"}, and
+\code{"kprototypes"}, which compute distances internally.}
+
+\item{dist_fun}{A function that takes a \code{data.frame} and returns a
+\code{dist} object. Required when \code{distance = "custom"};
+ignored otherwise.}
+
+\item{dist_args}{A named list of additional arguments passed to the
+distance function. For \code{distance = "gower"}, forwarded to
+\code{cluster::daisy()}; for \code{"jaccard"} or
+\code{"simple_matching"}, to \code{proxy::dist()}; for
+\code{"euclidean"} or \code{"manhattan"}, to \code{stats::dist()};
+also for \code{"custom"}. Default is \code{list()}.}
 }
 \value{
 An object of class \code{"mi_clustering_result"}: a named list
@@ -199,7 +224,7 @@ res_multi$validation_table
 
 # PAM with Gower distance (mixed data)
 res_gower <- run_mi_clustering(imp, method = "pam", k = 2:4,
-                               metric = "gower")
+                               distance = "gower")
 
 # ARI-weighted consensus, compactness-focused selection
 res_w <- run_mi_clustering(imp, method = "ward.D2", k = 2:5,
