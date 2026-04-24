@@ -170,4 +170,3 @@ plot_validation_metrics <- function(validation_table,
   }
   invisible(NULL)
 }
-
