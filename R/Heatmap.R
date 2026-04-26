@@ -103,6 +103,13 @@ plot_consensus_matrix <- function(consensus_result,
     consensus_result <- consensus_result$best_consensus_result
   }
 
+  # Auto-extract best_consensus_result from choose_best_clustering()
+  if (is.list(consensus_result) &&
+      !is.null(consensus_result$best_consensus_result) &&
+      is.null(consensus_result$coassignment)) {
+    consensus_result <- consensus_result$best_consensus_result
+  }
+
   # Validate that the co-assignment matrix is present
   if (is.null(consensus_result$coassignment)) {
     stop("consensus_result must contain 'coassignment'.")

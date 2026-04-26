@@ -101,6 +101,15 @@ plot_consensus_dendrogram <- function(consensus_result,
   }
 
   # --------------------------------------------------------
+  # Auto-extract best_consensus_result from choose_best_clustering()
+  # --------------------------------------------------------
+  if (is.list(consensus_result) &&
+      !is.null(consensus_result$best_consensus_result) &&
+      is.null(consensus_result$coassignment)) {
+    consensus_result <- consensus_result$best_consensus_result
+  }
+
+  # --------------------------------------------------------
   # Detect if multiple k (list of lists)
   # --------------------------------------------------------
   is_multi_k <- is.list(consensus_result) &&
