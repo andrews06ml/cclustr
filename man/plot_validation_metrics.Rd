@@ -8,8 +8,7 @@ plot_validation_metrics(
   validation_table,
   metrics = c("pac", "silhouette_mean", "ari_mean_between_imputations",
     "ari_consensus_mean", "calinski_harabasz_mean", "davies_bouldin_mean", "dunn_index",
-    "score"),
-  ask = FALSE
+    "score")
 )
 }
 \arguments{
@@ -26,10 +25,6 @@ are silently ignored. Default includes all standard metrics plus
 \code{"ari_mean_between_imputations"}, \code{"ari_consensus_mean"},
 \code{"calinski_harabasz_mean"}, \code{"davies_bouldin_mean"},
 \code{"dunn_index"}, and \code{"score"}.}
-
-\item{ask}{Logical. If \code{TRUE}, the user is prompted before each new
-plot is drawn, useful when displaying many metrics interactively.
-Default is \code{FALSE}.}
 }
 \value{
 Invisibly returns \code{NULL}. The function is called for its
@@ -102,7 +97,7 @@ plot_validation_metrics(val)
 
 # Include score column from choose_best_clustering
 best <- choose_best_clustering(val, cons)
-plot_validation_metrics(best$scores_table)
+plot_validation_metrics(best)
 
 # Plot only stability metrics
 plot_validation_metrics(val,

@@ -23,7 +23,7 @@ as_mild_list(x)
 A named list of \code{data.frame} objects, one per imputed
 dataset. All datasets are guaranteed to have identical dimensions and
 column names, and to contain no \code{NA}, \code{NaN}, \code{Inf}, or
-zero values.
+all equal values in a column.
 }
 \description{
 Converts multiple imputation outputs from different packages into a
@@ -44,7 +44,7 @@ The function performs the following consistency checks before returning:
 \item Identical number of columns across all imputed datasets.
 \item Identical column names across all imputed datasets.
 \item Absence of \code{NA}, \code{NaN}, and \code{Inf} values.
-\item Absence of numeric columns with all values equal to zero,
+\item Absence of numeric columns with all values equal,
 as such variables provide no information for distance-based
 clustering and may lead to degenerate solutions.
 }
