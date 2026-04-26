@@ -170,7 +170,7 @@ plot_validation_metrics <- function(validation_table,
          main = label,
          xaxt = "n")
 
-    axis(1, at = validation_table$k)
+    graphics::axis(1, at = validation_table$k)
 
     best_idx <- which.max(
       if (metric %in% c("pac", "davies_bouldin_mean", "score")) -y else y
