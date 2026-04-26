@@ -1,0 +1,394 @@
+---
+title: "Consensus Clustering with Multiple Imputed Data using cclustr"
+author: "Andres Montenegro Lemus, Anhuar Duran Mendoza, Mario Pacheco Lopez"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Consensus Clustering with Multiple Imputed Data using cclustr}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse  = TRUE,
+  comment   = "#>",
+  fig.width = 7,
+  fig.height = 5,
+  warning   = FALSE,
+  message   = FALSE
+)
+```
+
+## Introduction
+
+Missing data is a pervasive challenge in applied statistics. When performing
+cluster analysis, the standard practice of imputing a single dataset and then
+clustering ignores the uncertainty introduced by the imputation process,
+potentially leading to unstable or misleading cluster assignments.
+
+**cclustr** addresses this problem by applying clustering algorithms across
+all imputed datasets and synthesizing the results into a single, robust
+consensus partition. The core idea is the **co-assignment matrix**: a
+symmetric matrix $C$ where each entry $C_{ij}$ represents the proportion of
+imputed datasets in which observations $i$ and $j$ were assigned to the same
+cluster. High values indicate stable, robust groupings across imputations;
+low values indicate ambiguous assignments.
+
+The main workflow of `cclustr` consists of four steps:
+
+1. **Standardize** imputed data with `as_mild_list()`
+2. **Cluster** each imputed dataset with `cluster_imputations()`
+3. **Synthesize** results into a consensus partition with `consensus_clustering()`
+4. **Validate and select** the optimal number of clusters with
+   `validate_clustering()` and `choose_best_clustering()`
+
+All four steps can also be executed in a single call using the convenience
+wrapper `run_mi_clustering()`.
+
+---
+
+## Dataset: Pima Indians Diabetes
+
+We use the **Pima Indians Diabetes Database** (`PimaIndiansDiabetes2`) from
+the `mlbench` package, which contains clinical measurements for 768 women of
+Pima Indian heritage. The dataset presents **652 missing values** distributed
+across several variables, strongly motivating the use of multiple imputation
+before clustering.
+
+### Variables
+
+| Variable   | Type    | Description                                      |
+|------------|---------|--------------------------------------------------|
+| `pregnant` | Numeric | Number of times pregnant                         |
+| `glucose`  | Numeric | Plasma glucose concentration (2h oral test)      |
+| `pressure` | Numeric | Diastolic blood pressure (mm Hg)                 |
+| `triceps`  | Numeric | Triceps skin fold thickness (mm)                 |
+| `insulin`  | Numeric | 2-hour serum insulin (mu U/ml)                   |
+| `mass`     | Numeric | Body mass index (kg/m²)                          |
+| `pedigree` | Numeric | Diabetes pedigree function                       |
+| `age`      | Numeric | Age in years                                     |
+| `diabetes` | Factor  | Diabetes test result (positive/negative)         |
+
+> **Note:** The `diabetes` variable is excluded from the clustering analysis
+> and used only at the end to interpret and validate the resulting clusters.
+> This avoids circular reasoning and respects the unsupervised nature of the
+> analysis.
+
+### Loading the data
+
+```{r load-data}
+library(cclustr)
+library(mice)
+
+if (!requireNamespace("mlbench", quietly = TRUE)) {
+  stop("Package 'mlbench' is required for this vignette. ",
+       "Install it with: install.packages('mlbench')")
+}
+
+data("PimaIndiansDiabetes2", package = "mlbench")
+
+# Save the outcome variable for later interpretation
+y  <- PimaIndiansDiabetes2$diabetes
+
+# Remove diabetes from the clustering dataset
+df <- PimaIndiansDiabetes2[, -9]
+
+cat("Dimensions:", nrow(df), "x", ncol(df), "\n")
+cat("\nMissing values per variable:\n")
+print(colSums(is.na(df)))
+cat("\nTotal missing values:", sum(is.na(df)),
+    "(", round(mean(is.na(df)) * 100, 1), "%)\n")
+```
+
+The high proportion of missing values — particularly in `insulin` (48.7%) and
+`triceps` (29.6%) — makes this dataset a compelling real-world case study for
+multiple-imputation clustering.
+
+---
+
+## Step 1: Multiple Imputation with mice
+
+We generate 8 imputed datasets using `mice` with predictive mean matching
+(`pmm`). The `as_mild_list()` function from `cclustr` then converts the
+`mids` object into a standardized named list of completed data frames.
+
+```{r imputation}
+set.seed(123)
+
+imp <- mice(df, m = 8, printFlag = FALSE)
+
+# Convert to cclustr standard format
+mi_diabetes <- as_mild_list(imp)
+
+cat("Number of imputed datasets :", length(mi_diabetes), "\n")
+cat("Dimensions of each dataset :", nrow(mi_diabetes[[1]]),
+    "x", ncol(mi_diabetes[[1]]), "\n")
+cat("Any missing values remaining:", any(sapply(mi_diabetes, anyNA)), "\n")
+```
+
+`as_mild_list()` performs strict consistency checks across all imputed
+datasets, ensuring identical dimensions, column names, and the absence of
+`NA`, `NaN`, `Inf`, or constant-valued columns.
+
+---
+
+## Step 2: Clustering Each Imputed Dataset
+
+Since all clustering variables are numeric, we use **Ward hierarchical
+clustering** with **Euclidean distance** and `scale_data = "global"`. The
+global scaling option computes the pooled mean and standard deviation across
+all imputations without stacking them in memory, ensuring that distances are
+on the same scale across all imputed datasets — a key requirement for a
+meaningful co-assignment matrix.
+
+We evaluate $k = 2, 3, 4$ clusters simultaneously.
+
+```{r clustering}
+partitions <- cluster_imputations(
+  imp_list   = mi_diabetes,
+  method     = "ward.D2",
+  k          = 2:4,
+  scale_data = "global",
+  distance   = "euclidean"
+)
+
+cat("Available k values:", names(partitions), "\n")
+cat("Number of partitions per k:", length(partitions$k2), "\n")
+```
+
+The result is a named list of lists: one element per $k$ value (`k2`, `k3`,
+`k4`), each containing one integer vector of cluster assignments per imputed
+dataset.
+
+---
+
+## Step 3: Consensus Clustering
+
+`consensus_clustering()` builds the **co-assignment matrix** $C$ for each $k$
+and derives the final consensus partition via hierarchical clustering on the
+dissimilarity $1 - C$.
+
+```{r consensus}
+consensus_results <- consensus_clustering(
+  partitions     = partitions,
+  cluster_method = "ward.D2"
+)
+
+cat("Consensus solutions available:", names(consensus_results), "\n")
+```
+
+---
+
+## Step 4: Validation and Optimal k Selection
+
+`validate_clustering()` computes a comprehensive set of internal and stability
+metrics for each candidate $k$. All metrics are computed on the consensus
+dissimilarity $1 - C$, making them robust to any data type.
+
+```{r validation}
+val_table <- validate_clustering(
+  partitions        = partitions,
+  consensus_results = consensus_results
+)
+
+print(val_table)
+```
+
+### Metric Reference
+
+| Metric                          | Better when | Description                                    |
+|---------------------------------|-------------|------------------------------------------------|
+| `pac`                           | Lower ↓     | Proportion of Ambiguous Clusterings            |
+| `silhouette_mean`               | Higher ↑    | Mean silhouette width                          |
+| `ari_mean_between_imputations`  | Higher ↑    | Stability across imputed datasets              |
+| `ari_consensus_mean`            | Higher ↑    | Agreement between consensus and each partition |
+| `calinski_harabasz_mean`        | Higher ↑    | Cluster compactness and separation             |
+| `davies_bouldin_mean`           | Lower ↓     | Average cluster similarity                     |
+| `dunn_index`                    | Higher ↑    | Min inter-cluster / max intra-cluster distance |
+
+`choose_best_clustering()` aggregates all metrics using **weighted rank
+aggregation**: each metric is independently ranked and combined into a single
+score. The $k$ with the lowest weighted rank score is selected as optimal.
+
+```{r selection}
+best <- choose_best_clustering(
+  validation_table  = val_table,
+  consensus_results = consensus_results,
+  prefer_stability  = TRUE,
+  tie_breaker       = "silhouette"
+)
+
+cat("Optimal k selected:", best$best_k, "\n")
+cat("\nConsensus cluster sizes:\n")
+print(table(best$best_consensus))
+cat("\nWeighted rank scores:\n")
+print(best$scores_table[, c("k", "pac", "silhouette_mean",
+                             "ari_mean_between_imputations", "score")])
+```
+
+### Plotting Validation Metrics
+
+```{r validation-plot, fig.cap = "Validation metrics across k = 2, 3, 4. The optimal value per metric is highlighted in red."}
+plot_validation_metrics(best)
+```
+
+---
+
+## Visualizing the Consensus Solution
+
+All visualizations are based on the **optimal k** selected in the previous
+step, accessed through `best$best_consensus_result`.
+
+### Co-assignment Matrix
+
+A well-defined consensus solution produces a **block-diagonal pattern**:
+bright blocks along the diagonal indicate observations consistently assigned
+to the same cluster across all imputed datasets, while dark off-diagonal
+regions indicate observations rarely grouped together.
+
+```{r heatmap, fig.cap = "Co-assignment matrix for the optimal k. A clear block-diagonal structure indicates a stable consensus."}
+plot_consensus_matrix(
+  consensus_result = best$best_consensus_result,
+  reorder          = TRUE,
+  viridis_option   = "D"
+)
+```
+
+### Consensus Dendrogram
+
+```{r dendrogram, fig.cap = "Consensus dendrogram for the optimal k, derived from the dissimilarity matrix 1 - C."}
+plot_consensus_dendrogram(
+  consensus_result = best$best_consensus_result,
+  rect             = TRUE
+)
+```
+
+---
+
+## Interpreting the Final Clusters
+
+We attach the consensus labels and the original `diabetes` variable to the
+first imputed dataset for a descriptive summary.
+
+```{r cluster-summary}
+pima_clustered          <- mi_diabetes[[1]]
+pima_clustered$cluster  <- factor(best$best_consensus)
+pima_clustered$diabetes <- y
+
+# Mean values per cluster
+num_vars <- c("pregnant", "glucose", "pressure",
+              "triceps", "insulin", "mass", "pedigree", "age")
+
+cat("Mean clinical values by cluster:\n")
+print(
+  aggregate(
+    pima_clustered[, num_vars],
+    by  = list(Cluster = pima_clustered$cluster),
+    FUN = function(x) round(mean(x, na.rm = TRUE), 2)
+  )
+)
+```
+
+### Diabetes Prevalence by Cluster
+
+Since `diabetes` was not used in the clustering, its distribution across
+clusters serves as an **external validation**: clusters that differ in
+diabetes prevalence suggest that the unsupervised solution has captured
+clinically meaningful structure.
+
+```{r diabetes-prevalence}
+cat("Diabetes prevalence by cluster:\n")
+print(
+  round(
+    prop.table(
+      table(Cluster  = pima_clustered$cluster,
+            Diabetes = pima_clustered$diabetes),
+      margin = 1
+    ), 3
+  )
+)
+
+cat("\nOverall diabetes prevalence:\n")
+print(round(prop.table(table(pima_clustered$diabetes)), 3))
+```
+
+### Key Variables by Cluster
+
+```{r boxplots, fig.cap = "Distribution of glucose and BMI by consensus cluster."}
+par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+
+boxplot(
+  glucose ~ cluster,
+  data = pima_clustered,
+  main = "Plasma Glucose by Cluster",
+  xlab = "Cluster",
+  ylab = "Glucose (mg/dl)",
+  col  = c("#4E79A7", "#F28E2B", "#E15759")
+)
+
+boxplot(
+  mass ~ cluster,
+  data = pima_clustered,
+  main = "Body Mass Index by Cluster",
+  xlab = "Cluster",
+  ylab = "BMI (kg/m²)",
+  col  = c("#4E79A7", "#F28E2B", "#E15759")
+)
+
+par(mfrow = c(1, 1))
+```
+
+---
+
+## Complete Pipeline with run_mi_clustering()
+
+All previous steps can be executed in a single call using `run_mi_clustering()`.
+This is the recommended approach for most users.
+
+```{r full-pipeline}
+set.seed(123)
+
+result <- run_mi_clustering(
+  data             = imp,
+  method           = "ward.D2",
+  k                = 2:4,
+  scale_data       = "global",
+  distance         = "euclidean",
+  consensus_method = "classic",
+  prefer_stability = TRUE,
+  tie_breaker      = "silhouette"
+)
+
+cat("Best k selected:", result$best_k, "\n")
+cat("\nCluster sizes:\n")
+print(table(result$best_consensus))
+```
+
+---
+
+## Advanced: ARI-Weighted Consensus
+
+By default all imputed partitions contribute equally to the co-assignment
+matrix (`consensus_method = "classic"`). When partitions vary in quality,
+`consensus_method = "weighted_ari"` weights each partition by its mean
+Adjusted Rand Index (ARI) against all others — so more consistent partitions
+contribute more to the final consensus.
+
+```{r weighted-ari, eval = requireNamespace("mclust", quietly = TRUE)}
+set.seed(123)
+
+result_w <- run_mi_clustering(
+  data             = imp,
+  method           = "ward.D2",
+  k                = 2:4,
+  scale_data       = "global",
+  distance         = "euclidean",
+  consensus_method = "weighted_ari",
+  prefer_stability = TRUE,
+  tie_breaker      = "silhouette"
+)
+
+cat("Best k (ARI-weighted consensus):", result_w$best_k, "\n")
+print(table(result_w$best_consensus))
+```

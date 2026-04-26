@@ -4,7 +4,13 @@
 \alias{plot_consensus_dendrogram}
 \title{Plot a consensus clustering dendrogram}
 \usage{
-plot_consensus_dendrogram(consensus_result, k = NULL, rect = TRUE, hang = -1)
+plot_consensus_dendrogram(
+  consensus_result,
+  k = NULL,
+  rect = TRUE,
+  hang = -1,
+  labels = TRUE
+)
 }
 \arguments{
 \item{consensus_result}{A named list as returned by
@@ -22,6 +28,13 @@ around the clusters via \code{\link[stats]{rect.hclust}}.}
 \item{hang}{Numeric. The fraction of the plot height by which labels hang
 below the rest of the plot. A negative value (default \code{-1}) causes
 all labels to hang down from zero.}
+
+\item{labels}{Logical or character vector. Controls the labels displayed
+at the leaves of the dendrogram. If \code{TRUE} (default), observation
+labels are shown. If \code{FALSE}, no labels are displayed — recommended
+for large datasets where labels become unreadable. A character vector
+of the same length as the number of observations can also be supplied
+to use custom labels.}
 }
 \value{
 Invisibly returns \code{NULL}. The function is called for its

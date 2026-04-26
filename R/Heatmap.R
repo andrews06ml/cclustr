@@ -98,16 +98,25 @@ plot_consensus_matrix <- function(consensus_result,
                                   show_labels    = FALSE,
                                   viridis_option = "D") {
 
+  # Auto-extract best_consensus_result from mi_clustering_result
+  if (inherits(consensus_result, "mi_clustering_result")) {
+    consensus_result <- consensus_result$best_consensus_result
+  }
+
+  # Validate that the co-assignment matrix is present
   if (is.null(consensus_result$coassignment)) {
     stop("consensus_result must contain 'coassignment'.")
   }
 
   M <- consensus_result$coassignment
 
+  # Ensure the co-assignment object is a matrix
   if (!is.matrix(M)) {
     stop("'coassignment' must be a matrix.")
   }
 
+  # Reorder rows and columns by consensus cluster assignment
+  # to make the block-diagonal structure visually apparent
   ord <- seq_len(nrow(M))
 
   if (reorder) {
@@ -118,15 +127,17 @@ plot_consensus_matrix <- function(consensus_result,
 
   M_ord <- M[ord, ord, drop = FALSE]
 
+  # Save and restore graphical parameters on exit
   op <- graphics::par(no.readonly = TRUE)
   on.exit(graphics::par(op))
 
   graphics::par(mar = c(4, 4, 2, 2))
 
-  # Validate Viridis options
+  # Validate the viridis color palette option
   if (!viridis_option %in% c("A", "B", "C", "D", "E", "F", "G", "H"))
     stop("'viridis_option' must be one of 'A', 'B', 'C', 'D', 'E', 'F', 'G', or 'H'.")
 
+  # Render the heatmap using image()
   graphics::image(1:nrow(M_ord), 1:ncol(M_ord), t(M_ord[nrow(M_ord):1, ]),
         col   = viridisLite::viridis(100, option = viridis_option),
         axes  = FALSE,

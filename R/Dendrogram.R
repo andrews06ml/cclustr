@@ -18,6 +18,12 @@
 #' @param hang Numeric. The fraction of the plot height by which labels hang
 #'   below the rest of the plot. A negative value (default \code{-1}) causes
 #'   all labels to hang down from zero.
+#' @param labels Logical or character vector. Controls the labels displayed
+#'   at the leaves of the dendrogram. If \code{TRUE} (default), observation
+#'   labels are shown. If \code{FALSE}, no labels are displayed — recommended
+#'   for large datasets where labels become unreadable. A character vector
+#'   of the same length as the number of observations can also be supplied
+#'   to use custom labels.
 #'
 #' @return Invisibly returns \code{NULL}. The function is called for its
 #'   side effect of producing a plot.
@@ -84,7 +90,8 @@
 plot_consensus_dendrogram <- function(consensus_result,
                                       k = NULL,
                                       rect = TRUE,
-                                      hang = -1) {
+                                      hang = -1,
+                                      labels = TRUE) {
 
   # --------------------------------------------------------
   # Detect if multiple k (list of lists)
@@ -131,6 +138,7 @@ plot_consensus_dendrogram <- function(consensus_result,
   # --------------------------------------------------------
   plot(consensus_result$hclust,
        hang = hang,
+       labels = labels,
        main = paste("Consensus dendrogram (k =", consensus_result$k, ")"),
        xlab = "",
        sub = "")
