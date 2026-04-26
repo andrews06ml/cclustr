@@ -30,7 +30,7 @@ utils::globalVariables(c(".imp"))
 #' @return A named list of \code{data.frame} objects, one per imputed
 #' dataset. All datasets are guaranteed to have identical dimensions and
 #' column names, and to contain no \code{NA}, \code{NaN}, \code{Inf}, or
-#' zero values.
+#' all equal values in a column.
 #'
 #' @details
 #' The function performs the following consistency checks before returning:
@@ -39,7 +39,7 @@ utils::globalVariables(c(".imp"))
 #'   \item Identical number of columns across all imputed datasets.
 #'   \item Identical column names across all imputed datasets.
 #'   \item Absence of \code{NA}, \code{NaN}, and \code{Inf} values.
-#'   \item Absence of numeric columns with all values equal to zero,
+#'   \item Absence of numeric columns with all values equal,
 #'         as such variables provide no information for distance-based
 #'         clustering and may lead to degenerate solutions.
 #' }
@@ -198,7 +198,7 @@ as_mild_list <- function(x) {
   imp_list <- lapply(imp_list, as.data.frame)
 
   #-------------------------------------------------------
-  # check missing, infinite and zero values
+  # check missing, infinite and equal values
   #-------------------------------------------------------
 
   for (i in seq_along(imp_list)) {
@@ -220,16 +220,19 @@ as_mild_list <- function(x) {
       stop(paste("Imputation", i, "contains Inf values."))
     }
 
-    # 4) Check columns fully equal to zero
-    zero_cols <- names(df)[
+    # 4) Check columns with the same values
+    same_cols <- names(df)[
       sapply(names(df), function(nm) {
         col <- df[[nm]]
-        is.numeric(col) && all(col == 0)
+        is.numeric(col) && length(unique(col)) == 1
       })
     ]
-    if (length(zero_cols) > 0) {
-      stop(paste("Imputation", i, "has columns with only zeros:",
-                 paste(zero_cols, collapse = ", ")))
+    if (length(same_cols) > 0) {
+      const_vals <- sapply(same_cols, function(nm) unique(df[[nm]]))
+      details <- paste(same_cols, "=", const_vals, collapse = ", ")
+      stop(paste("Imputation", i,
+                 "has constant numeric columns (all values identical):",
+                 details))
     }
   }
 

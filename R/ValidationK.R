@@ -19,9 +19,6 @@
 #'   \code{"ari_mean_between_imputations"}, \code{"ari_consensus_mean"},
 #'   \code{"calinski_harabasz_mean"}, \code{"davies_bouldin_mean"},
 #'   \code{"dunn_index"}, and \code{"score"}.
-#' @param ask Logical. If \code{TRUE}, the user is prompted before each new
-#'   plot is drawn, useful when displaying many metrics interactively.
-#'   Default is \code{FALSE}.
 #'
 #' @return Invisibly returns \code{NULL}. The function is called for its
 #'   side effect of producing a plot.
@@ -86,7 +83,7 @@
 #'
 #' # Include score column from choose_best_clustering
 #' best <- choose_best_clustering(val, cons)
-#' plot_validation_metrics(best$scores_table)
+#' plot_validation_metrics(best)
 #'
 #' # Plot only stability metrics
 #' plot_validation_metrics(val,
@@ -109,8 +106,20 @@ plot_validation_metrics <- function(validation_table,
                                                 "calinski_harabasz_mean",
                                                 "davies_bouldin_mean",
                                                 "dunn_index",
-                                                "score"),
-                                    ask = FALSE) {
+                                                "score")) {
+
+  # Auto-extract scores_table from mi_clustering_result or choose_best_clustering output
+  if (inherits(validation_table, "mi_clustering_result")) {
+    validation_table <- validation_table$scores_table
+
+  } else if (is.list(validation_table) && !is.data.frame(validation_table)) {
+
+    if (!is.null(validation_table$scores_table)) {
+      validation_table <- validation_table$scores_table
+    } else {
+      stop("Could not extract a valid scores_table from the provided list.")
+    }
+  }
 
   if (!is.data.frame(validation_table)) {
     stop("validation_table must be a data.frame.")
@@ -133,7 +142,7 @@ plot_validation_metrics <- function(validation_table,
   nrow_plot <- ceiling(sqrt(n))
   ncol_plot <- ceiling(n / nrow_plot)
 
-  graphics::par(mfrow = c(nrow_plot, ncol_plot), ask = ask)
+  graphics::par(mfrow = c(nrow_plot, ncol_plot))
 
   # labels for each metric
   metric_labels <- c(
@@ -158,7 +167,10 @@ plot_validation_metrics <- function(validation_table,
          pch  = 19,
          xlab = "Number of clusters (k)",
          ylab = label,
-         main = label)
+         main = label,
+         xaxt = "n")
+
+    axis(1, at = validation_table$k)
 
     best_idx <- which.max(
       if (metric %in% c("pac", "davies_bouldin_mean", "score")) -y else y
