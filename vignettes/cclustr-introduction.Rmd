@@ -114,9 +114,9 @@ We generate 8 imputed datasets using `mice` with predictive mean matching
 `mids` object into a standardized named list of completed data frames.
 
 ```{r imputation}
-set.seed(123)
+set.seed(202604)
 
-imp <- mice(df, m = 8, printFlag = FALSE)
+imp <- mice(df, m = 20, maxit = 20, printFlag = FALSE)
 
 # Convert to cclustr standard format
 mi_diabetes <- as_mild_list(imp)
@@ -249,7 +249,7 @@ regions indicate observations rarely grouped together.
 
 ```{r heatmap, fig.cap = "Co-assignment matrix for the optimal k. A clear block-diagonal structure indicates a stable consensus."}
 plot_consensus_matrix(
-  consensus_result = best$best_consensus_result,
+  consensus_result = best,
   reorder          = TRUE,
   viridis_option   = "D"
 )
@@ -259,8 +259,9 @@ plot_consensus_matrix(
 
 ```{r dendrogram, fig.cap = "Consensus dendrogram for the optimal k, derived from the dissimilarity matrix 1 - C."}
 plot_consensus_dendrogram(
-  consensus_result = best$best_consensus_result,
-  rect             = TRUE
+  consensus_result = best,
+  rect             = TRUE,
+  labels           = FALSE
 )
 ```
 

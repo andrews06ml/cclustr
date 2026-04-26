@@ -94,6 +94,13 @@ plot_consensus_dendrogram <- function(consensus_result,
                                       labels = TRUE) {
 
   # --------------------------------------------------------
+  # Auto-extract best_consensus_result from mi_clustering_result
+  # --------------------------------------------------------
+  if (inherits(consensus_result, "mi_clustering_result")) {
+    consensus_result <- consensus_result$best_consensus_result
+  }
+
+  # --------------------------------------------------------
   # Detect if multiple k (list of lists)
   # --------------------------------------------------------
   is_multi_k <- is.list(consensus_result) &&
