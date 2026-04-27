@@ -9,7 +9,7 @@ plot_consensus_dendrogram(
   k = NULL,
   rect = TRUE,
   hang = -1,
-  labels = TRUE
+  labels = NULL
 )
 }
 \arguments{
@@ -30,7 +30,7 @@ below the rest of the plot. A negative value (default \code{-1}) causes
 all labels to hang down from zero.}
 
 \item{labels}{Logical or character vector. Controls the labels displayed
-at the leaves of the dendrogram. If \code{TRUE} (default), observation
+at the leaves of the dendrogram. If \code{NULL} (default), observation
 labels are shown. If \code{FALSE}, no labels are displayed — recommended
 for large datasets where labels become unreadable. A character vector
 of the same length as the number of observations can also be supplied

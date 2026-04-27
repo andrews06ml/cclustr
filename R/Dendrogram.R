@@ -19,7 +19,7 @@
 #'   below the rest of the plot. A negative value (default \code{-1}) causes
 #'   all labels to hang down from zero.
 #' @param labels Logical or character vector. Controls the labels displayed
-#'   at the leaves of the dendrogram. If \code{TRUE} (default), observation
+#'   at the leaves of the dendrogram. If \code{NULL} (default), observation
 #'   labels are shown. If \code{FALSE}, no labels are displayed — recommended
 #'   for large datasets where labels become unreadable. A character vector
 #'   of the same length as the number of observations can also be supplied
@@ -91,7 +91,7 @@ plot_consensus_dendrogram <- function(consensus_result,
                                       k = NULL,
                                       rect = TRUE,
                                       hang = -1,
-                                      labels = TRUE) {
+                                      labels = NULL) {
 
   # --------------------------------------------------------
   # Auto-extract best_consensus_result from mi_clustering_result
@@ -152,17 +152,26 @@ plot_consensus_dendrogram <- function(consensus_result,
   # --------------------------------------------------------
   # Plot
   # --------------------------------------------------------
-  plot(consensus_result$hclust,
-       hang = hang,
-       labels = labels,
-       main = paste("Consensus dendrogram (k =", consensus_result$k, ")"),
-       xlab = "",
-       sub = "")
+  # Build plot arguments dynamically
+  plot_args <- list(
+    x    = consensus_result$hclust,
+    hang = hang,
+    main = paste("Consensus dendrogram (k =", consensus_result$k, ")"),
+    xlab = "",
+    sub  = ""
+  )
+
+  # Only pass labels if explicitly specified by the user
+  if (!is.null(labels)) {
+    plot_args$labels <- labels
+  }
+
+  do.call(plot, plot_args)
 
   if (rect) {
     stats::rect.hclust(consensus_result$hclust,
-                k = consensus_result$k,
-                border = 2:6)
+                       k      = consensus_result$k,
+                       border = 2:6)
   }
   invisible(NULL)
 }
