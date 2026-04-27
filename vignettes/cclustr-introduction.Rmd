@@ -1,6 +1,6 @@
 ---
 title: "Consensus Clustering with Multiple Imputed Data using cclustr"
-author: "Andres Montenegro Lemus, Anhuar Duran Mendoza, Mario Pacheco Lopez"
+author: "Anhuar Duran Mendoza, Andres Montenegro Lemus, Mario Pacheco Lopez"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
