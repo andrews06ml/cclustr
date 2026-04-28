@@ -19,8 +19,8 @@
 * Fedora Linux 42 / ATLAS, R-devel (2026-04-24 r89961): 0 errors | 0 warnings | 1 note
 
 ### win-builder
-* Windows, R-devel: pending
-* Windows, R-release: pending
+* Windows, R-devel (2026-04-27 r89967): 0 errors | 0 warnings | 2 notes
+* Windows, R-release (R 4.6.0): 0 errors | 0 warnings | 2 notes
 
 ## Notes
 
