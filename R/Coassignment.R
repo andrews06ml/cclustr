@@ -115,6 +115,18 @@
 #' }
 #' }
 #'
+#' @references
+#' Monti, S., Tamayo, P., Mesirov, J., & Golub, T. (2003).
+#' Consensus clustering: A resampling-based method for class discovery
+#' and visualization of gene expression microarray data.
+#' \emph{Machine Learning}, \strong{52}(1-2), 91-118.
+#' \doi{10.1023/A:1023949509487}
+#'
+#' Hubert, L., & Arabie, P. (1985).
+#' Comparing partitions.
+#' \emph{Journal of Classification}, \strong{2}, 193-218.
+#' \doi{10.1007/BF01908075}
+#'
 #' @seealso \code{\link{cluster_imputations}}, \code{\link{validate_clustering}}
 #'
 #' @export

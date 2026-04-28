@@ -198,6 +198,21 @@
 #' }
 #' }
 #'
+#' @references
+#' Monti, S., Tamayo, P., Mesirov, J., & Golub, T. (2003).
+#' Consensus clustering: A resampling-based method for class discovery
+#' and visualization of gene expression microarray data.
+#' \emph{Machine Learning}, \strong{52}(1-2), 91-118.
+#' \doi{10.1023/A:1023949509487}
+#'
+#' Rubin, D. B. (1987).
+#' \emph{Multiple Imputation for Nonresponse in Surveys}. Wiley.
+#'
+#' Pihur, V., Datta, S., & Datta, S. (2007).
+#' Weighted rank aggregation of cluster validation measures.
+#' \emph{Bioinformatics}, \strong{23}(13), 1607-1615.
+#' \doi{10.1093/bioinformatics/btm158}
+#'
 #' @seealso
 #' \code{\link{as_mild_list}}, \code{\link{cluster_imputations}},
 #' \code{\link{consensus_clustering}}, \code{\link{validate_clustering}},

@@ -88,6 +88,25 @@ utils::globalVariables(c(".imp"))
 #' }
 #' }
 #'
+#' @references
+#' Rubin, D. B. (1976).
+#' Inference and missing data.
+#' \emph{Biometrika}, \strong{63}(3), 581-592.
+#' \doi{10.1093/biomet/63.3.581}
+#'
+#' Rubin, D. B. (1987).
+#' \emph{Multiple Imputation for Nonresponse in Surveys}. Wiley.
+#'
+#' van Buuren, S., & Groothuis-Oudshoorn, K. (2011).
+#' mice: Multivariate Imputation by Chained Equations in R.
+#' \emph{Journal of Statistical Software}, \strong{45}(3), 1-67.
+#' \doi{10.18637/jss.v045.i03}
+#'
+#' Honaker, J., King, G., & Blackwell, M. (2011).
+#' Amelia II: A Program for Missing Data.
+#' \emph{Journal of Statistical Software}, \strong{45}(7), 1-47.
+#' \doi{10.18637/jss.v045.i07}
+#'
 #' @seealso \code{\link{cluster_imputations}}, \code{\link{consensus_clustering}}
 #'
 #' @export

@@ -199,6 +199,11 @@ Pihur, V., Datta, S., & Datta, S. (2007). Weighted rank aggregation
 of cluster validation measures: a Monte Carlo cross-entropy approach.
 \emph{Bioinformatics}, \strong{23}(13), 1607-1615.
 \doi{10.1093/bioinformatics/btm158}
+
+Hubert, L., & Arabie, P. (1985).
+Comparing partitions.
+\emph{Journal of Classification}, \strong{2}, 193-218.
+\doi{10.1007/BF01908075}
 }
 \seealso{
 \code{\link{validate_clustering}}, \code{\link{consensus_clustering}},

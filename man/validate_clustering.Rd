@@ -119,6 +119,39 @@ if (requireNamespace("mice", quietly = TRUE)) {
 }
 
 }
+\references{
+Senbabaoglu, Y., Michailidis, G., & Li, J. Z. (2014).
+Critical limitations of consensus clustering in class discovery.
+\emph{Scientific Reports}, \strong{4}, 6207.
+\doi{10.1038/srep06207}
+
+Rousseeuw, P. J. (1987).
+Silhouettes: A graphical aid to the interpretation and validation
+of cluster analysis.
+\emph{Journal of Computational and Applied Mathematics}, \strong{20}, 53-65.
+\doi{10.1016/0377-0427(87)90125-7}
+
+Calinski, T., & Harabasz, J. (1974).
+A dendrite method for cluster analysis.
+\emph{Communications in Statistics}, \strong{3}, 1-27.
+\doi{10.1080/03610927408827101}
+
+Davies, D. L., & Bouldin, D. W. (1979).
+A cluster separation measure.
+\emph{IEEE Transactions on Pattern Analysis and Machine Intelligence},
+\strong{PAMI-1}, 224-227.
+\doi{10.1109/TPAMI.1979.4766909}
+
+Dunn, J. C. (1974).
+Well-separated clusters and optimal fuzzy partitions.
+\emph{Journal of Cybernetics}, \strong{4}, 95-104.
+\doi{10.1080/01969727408546059}
+
+Hubert, L., & Arabie, P. (1985).
+Comparing partitions.
+\emph{Journal of Classification}, \strong{2}, 193-218.
+\doi{10.1007/BF01908075}
+}
 \seealso{
 \code{\link{consensus_clustering}}, \code{\link{choose_best_clustering}}
 }
