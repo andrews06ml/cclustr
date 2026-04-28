@@ -13,10 +13,13 @@
 
 ## Test environments
 
+### Local
+* Windows 11, R 4.3.3: 0 errors | 0 warnings | 2 notes
+
 ### rhub
-* Ubuntu 24.04 LTS, R-devel (2026-04-24 r89961): 0 errors | 0 warnings | 1 note
-* Windows Server 2022, R-devel (2026-04-25 r89962): 0 errors | 0 warnings | 1 note
-* Fedora Linux 42 / ATLAS, R-devel (2026-04-24 r89961): 0 errors | 0 warnings | 1 note
+* Ubuntu 24.04 LTS, R-devel (2026-04-26 r89963): 0 errors | 0 warnings | 1 note
+* Windows Server 2022, R-devel (2026-04-26 r89963): 0 errors | 0 warnings | 1 note
+* Fedora Linux 42 / ATLAS, R-devel (2026-04-26 r89963): 0 errors | 0 warnings | 1 note
 
 ### win-builder
 * Windows, R-devel (2026-04-27 r89967): 0 errors | 0 warnings | 2 notes
@@ -25,5 +28,7 @@
 ## Notes
 
 * This is a new submission.
-* The only NOTE across all platforms refers to the `.github` directory,
-  which is excluded from the package build via `.Rbuildignore`.
+* The .github directory is excluded from the package build via
+  .Rbuildignore.
+* The "unable to verify current time" note is a server-side issue
+  on the check platform, not related to the package.
