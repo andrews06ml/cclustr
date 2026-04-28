@@ -229,6 +229,32 @@
 #' }
 #' }
 #'
+#' @references
+#' Kaufman, L., & Rousseeuw, P. J. (1990).
+#' \emph{Finding Groups in Data: An Introduction to Cluster Analysis}. Wiley.
+#' \doi{10.1002/9780470316801}
+#'
+#' Bezdek, J. C. (1981).
+#' \emph{Pattern Recognition with Fuzzy Objective Function Algorithms}.
+#' Plenum Press.
+#'
+#' Huang, Z. (1998).
+#' Extensions to the k-means algorithm for clustering large data sets
+#' with categorical values.
+#' \emph{Data Mining and Knowledge Discovery}, \strong{2}(3), 283-304.
+#' \doi{10.1023/A:1009769707641}
+#'
+#' Gower, J. C. (1971).
+#' A general coefficient of similarity and some of its properties.
+#' \emph{Biometrics}, \strong{27}(4), 857-871.
+#' \doi{10.2307/2528823}
+#'
+#' Scrucca, L., Fop, M., Murphy, T. B., & Raftery, A. E. (2016).
+#' mclust 5: Clustering, classification and density estimation using
+#' Gaussian finite mixture models.
+#' \emph{The R Journal}, \strong{8}(1), 289-317.
+#' \doi{10.32614/RJ-2016-021}
+#'
 #' @seealso \code{\link{as_mild_list}}, \code{\link{consensus_clustering}}
 #'
 #' @export
