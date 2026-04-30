@@ -20,8 +20,11 @@
 #'   \code{consensus_result$consensus}, making the block structure of the
 #'   matrix visually apparent.
 #' @param show_labels Logical. If \code{TRUE}, observation indices are
-#'   displayed on both axes. Recommended only for small datasets as labels
-#'   become unreadable for large \eqn{n}. Default is \code{FALSE}.
+#'   displayed on both axes, ordered according to the consensus cluster
+#'   assignment. Recommended only for small datasets (n < 50) as labels
+#'   become unreadable for large \eqn{n}. If \code{FALSE} (default),
+#'   tick marks are shown without labels to preserve the axis frame
+#'   without visual clutter.
 #' @param viridis_option A single character specifying the color palette
 #'   passed to \code{\link[viridisLite]{viridis}}. Accepted values are
 #'   \code{"A"} (magma), \code{"B"} (inferno), \code{"C"} (plasma), and
@@ -156,8 +159,8 @@ plot_consensus_matrix <- function(consensus_result,
     graphics::axis(1, at = seq_len(nrow(M_ord)), labels = ord,      las = 2, cex.axis = 0.4)
     graphics::axis(2, at = seq_len(ncol(M_ord)), labels = rev(ord), las = 2, cex.axis = 0.4)
   } else {
-    graphics::axis(1)
-    graphics::axis(2)
+    graphics::axis(1, labels = FALSE)
+    graphics::axis(2, labels = FALSE)
   }
 
   graphics::box()

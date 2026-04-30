@@ -89,7 +89,7 @@ if (!requireNamespace("mlbench", quietly = TRUE)) {
 data("PimaIndiansDiabetes2", package = "mlbench")
 
 # Save the outcome variable for later interpretation
-y  <- PimaIndiansDiabetes2$diabetes
+var_t  <- PimaIndiansDiabetes2$diabetes
 
 # Remove diabetes from the clustering dataset
 df <- PimaIndiansDiabetes2[, -9]
@@ -109,22 +109,21 @@ multiple-imputation clustering.
 
 ## Step 1: Multiple Imputation with mice
 
-We generate 8 imputed datasets using `mice` with predictive mean matching
+We generate 20 imputed datasets using `mice` with predictive mean matching
 (`pmm`). The `as_mild_list()` function from `cclustr` then converts the
 `mids` object into a standardized named list of completed data frames.
 
 ```{r imputation}
-set.seed(202604)
 
-imp <- mice(df, m = 20, maxit = 20, printFlag = FALSE)
+imp <- mice(df, m = 20, maxit = 20, method = "pmm", printFlag = FALSE, seed = 202604)
 
 # Convert to cclustr standard format
-mi_diabetes <- as_mild_list(imp)
+mi_pima <- as_mild_list(imp)
 
-cat("Number of imputed datasets :", length(mi_diabetes), "\n")
-cat("Dimensions of each dataset :", nrow(mi_diabetes[[1]]),
-    "x", ncol(mi_diabetes[[1]]), "\n")
-cat("Any missing values remaining:", any(sapply(mi_diabetes, anyNA)), "\n")
+cat("Number of imputed datasets :", length(mi_pima), "\n")
+cat("Dimensions of each dataset :", nrow(mi_pima[[1]]),
+    "x", ncol(mi_pima[[1]]), "\n")
+cat("Any missing values remaining:", any(sapply(mi_pima, anyNA)), "\n")
 ```
 
 `as_mild_list()` performs strict consistency checks across all imputed
@@ -135,8 +134,8 @@ datasets, ensuring identical dimensions, column names, and the absence of
 
 ## Step 2: Clustering Each Imputed Dataset
 
-Since all clustering variables are numeric, we use **Ward hierarchical
-clustering** with **Euclidean distance** and `scale_data = "global"`. The
+Since all clustering variables are numeric, we use **k-means
+clustering** and `scale_data = "global"`. The
 global scaling option computes the pooled mean and standard deviation across
 all imputations without stacking them in memory, ensuring that distances are
 on the same scale across all imputed datasets — a key requirement for a
@@ -146,11 +145,10 @@ We evaluate $k = 2, 3, 4$ clusters simultaneously.
 
 ```{r clustering}
 partitions <- cluster_imputations(
-  imp_list   = mi_diabetes,
-  method     = "ward.D2",
+  imp_list   = mi_pima,
+  method     = "kmeans",
   k          = 2:4,
-  scale_data = "global",
-  distance   = "euclidean"
+  scale_data = "global"
 )
 
 cat("Available k values:", names(partitions), "\n")
@@ -168,6 +166,36 @@ dataset.
 `consensus_clustering()` builds the **co-assignment matrix** $C$ for each $k$
 and derives the final consensus partition via hierarchical clustering on the
 dissimilarity $1 - C$.
+
+### The `cluster_method` parameter
+
+The `cluster_method` argument controls the **agglomeration method** used
+in this second-stage hierarchical clustering step. It is important to
+distinguish it from the `method` argument in `cluster_imputations()`:
+
+- `method` (in `cluster_imputations`): the algorithm used to cluster each
+  imputed dataset (e.g., `"kmeans"`, `"ward.D2"`, `"pam"`).
+- `cluster_method` (in `consensus_clustering`): the linkage criterion used
+  to hierarchically cluster the **co-assignment dissimilarity** $1 - C$ in
+  order to derive the final consensus partition.
+
+The available options for `cluster_method` are the standard agglomeration
+methods from `stats::hclust()`:
+
+| Method        | Description                                                         |
+|---------------|---------------------------------------------------------------------|
+| `"ward.D2"`   | (default) Minimizes total within-cluster variance. Tends to produce compact, roughly equal-sized clusters. Recommended for most cases. |
+| `"ward.D"`    | Earlier Ward formulation; similar behavior to `"ward.D2"` but uses unsquared distances internally. |
+| `"complete"`  | Maximum linkage. Tends to produce compact clusters of similar diameter. |
+| `"average"`   | UPGMA. Compromise between single and complete; less sensitive to outliers than complete linkage. |
+| `"single"`    | Minimum linkage. Sensitive to chaining effects; not recommended for consensus matrices. |
+| `"centroid"`  | Uses the centroid of each cluster. Can produce inversions in the dendrogram. |
+| `"median"`    | Weighted centroid. Also susceptible to inversions. |
+| `"mcquitty"`  | WPGMA. Similar to average but uses equal weighting. |
+
+For consensus matrices, `"ward.D2"` and `"complete"` are generally the
+most appropriate choices, as they favor compact, well-separated groups
+that match the block-diagonal structure of a stable co-assignment matrix.
 
 ```{r consensus}
 consensus_results <- consensus_clustering(
@@ -251,11 +279,16 @@ regions indicate observations rarely grouped together.
 plot_consensus_matrix(
   consensus_result = best,
   reorder          = TRUE,
-  viridis_option   = "D"
+  viridis_option   = "D",
+  show_labels = TRUE
 )
 ```
 
 ### Consensus Dendrogram
+
+The dendrogram is built from the hierarchical clustering of the consensus
+dissimilarity $1 - C$. Colored rectangles highlight the groups obtained by
+cutting the tree at the optimal $k$.
 
 ```{r dendrogram, fig.cap = "Consensus dendrogram for the optimal k, derived from the dissimilarity matrix 1 - C."}
 plot_consensus_dendrogram(
@@ -273,9 +306,9 @@ We attach the consensus labels and the original `diabetes` variable to the
 first imputed dataset for a descriptive summary.
 
 ```{r cluster-summary}
-pima_clustered          <- mi_diabetes[[1]]
+pima_clustered          <- mi_pima[[1]]
 pima_clustered$cluster  <- factor(best$best_consensus)
-pima_clustered$diabetes <- y
+pima_clustered$diabetes <- var_t
 
 # Mean values per cluster
 num_vars <- c("pregnant", "glucose", "pressure",
@@ -348,14 +381,13 @@ All previous steps can be executed in a single call using `run_mi_clustering()`.
 This is the recommended approach for most users.
 
 ```{r full-pipeline}
-set.seed(123)
+set.seed(202604)
 
 result <- run_mi_clustering(
   data             = imp,
-  method           = "ward.D2",
+  method           = "kmeans",
   k                = 2:4,
   scale_data       = "global",
-  distance         = "euclidean",
   consensus_method = "classic",
   prefer_stability = TRUE,
   tie_breaker      = "silhouette"
@@ -377,14 +409,13 @@ Adjusted Rand Index (ARI) against all others — so more consistent partitions
 contribute more to the final consensus.
 
 ```{r weighted-ari, eval = requireNamespace("mclust", quietly = TRUE)}
-set.seed(123)
+set.seed(202604)
 
 result_w <- run_mi_clustering(
   data             = imp,
-  method           = "ward.D2",
+  method           = "kmeans",
   k                = 2:4,
   scale_data       = "global",
-  distance         = "euclidean",
   consensus_method = "weighted_ari",
   prefer_stability = TRUE,
   tie_breaker      = "silhouette"
