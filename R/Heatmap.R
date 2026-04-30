@@ -141,7 +141,10 @@ plot_consensus_matrix <- function(consensus_result,
   op <- graphics::par(no.readonly = TRUE)
   on.exit(graphics::par(op))
 
-  graphics::par(mar = c(4, 4, 2, 2))
+  # Delete axes
+  graphics::par(mar  = c(4, 4, 2, 2),
+                xaxt = "n",
+                yaxt = "n")
 
   # Validate the viridis color palette option
   if (!viridis_option %in% c("A", "B", "C", "D", "E", "F", "G", "H"))
@@ -149,18 +152,17 @@ plot_consensus_matrix <- function(consensus_result,
 
   # Render the heatmap using image()
   graphics::image(1:nrow(M_ord), 1:ncol(M_ord), t(M_ord[nrow(M_ord):1, ]),
-        col   = viridisLite::viridis(100, option = viridis_option),
-        axes  = FALSE,
-        xlab  = "Observations",
-        ylab  = "Observations",
-        main  = paste("Consensus matrix (k =", consensus_result$k, ")"))
+                  col  = viridisLite::viridis(100, option = viridis_option),
+                  axes = FALSE,
+                  xlab = "Observations",
+                  ylab = "Observations",
+                  main = paste("Consensus matrix (k =", consensus_result$k, ")"))
 
   if (show_labels) {
+    # Restaurar ejes para poder dibujarlos con axis()
+    graphics::par(xaxt = "s", yaxt = "s")
     graphics::axis(1, at = seq_len(nrow(M_ord)), labels = ord,      las = 2, cex.axis = 0.4)
     graphics::axis(2, at = seq_len(ncol(M_ord)), labels = rev(ord), las = 2, cex.axis = 0.4)
-  } else {
-    graphics::axis(1, labels = FALSE)
-    graphics::axis(2, labels = FALSE)
   }
 
   graphics::box()
