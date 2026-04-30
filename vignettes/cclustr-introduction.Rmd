@@ -163,9 +163,22 @@ dataset.
 
 ## Step 3: Consensus Clustering
 
-`consensus_clustering()` builds the **co-assignment matrix** $C$ for each $k$
-and derives the final consensus partition via hierarchical clustering on the
-dissimilarity $1 - C$.
+`consensus_clustering()` builds the **co-assignment matrix** $C$ and derives
+a final partition from it. This process involves **two conceptually distinct
+steps**:
+
+1. **How the co-assignment matrix is constructed** (`consensus_method`)
+2. **How the final clusters are extracted** (`cluster_method`)
+
+### The `consensus_method` parameter
+
+The `consensus_method` argument controls **how each partition contributes
+to the co-assignment matrix** $C$.
+
+| Method            | Description |
+|------------------|------------|
+| `"classic"`      | Unweighted co-assignment. All partitions contribute equally to $C$. This is the standard approach in consensus clustering literature. |
+| `"weighted_ari"` | Partitions are weighted according to their **centrality** within the ensemble, measured by their mean Adjusted Rand Index (ARI) against all other partitions. More consistent partitions have greater influence on $C$. Requires the `mclust` package. |
 
 ### The `cluster_method` parameter
 
@@ -200,7 +213,8 @@ that match the block-diagonal structure of a stable co-assignment matrix.
 ```{r consensus}
 consensus_results <- consensus_clustering(
   partitions     = partitions,
-  cluster_method = "ward.D2"
+  cluster_method = "ward.D2",
+  consensus_method = "classic"
 )
 
 cat("Consensus solutions available:", names(consensus_results), "\n")
