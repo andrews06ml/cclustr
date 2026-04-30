@@ -24,8 +24,11 @@ reordered by the consensus cluster assignment stored in
 matrix visually apparent.}
 
 \item{show_labels}{Logical. If \code{TRUE}, observation indices are
-displayed on both axes. Recommended only for small datasets as labels
-become unreadable for large \eqn{n}. Default is \code{FALSE}.}
+displayed on both axes, ordered according to the consensus cluster
+assignment. Recommended only for small datasets (n < 50) as labels
+become unreadable for large \eqn{n}. If \code{FALSE} (default),
+tick marks are shown without labels to preserve the axis frame
+without visual clutter.}
 
 \item{viridis_option}{A single character specifying the color palette
 passed to \code{\link[viridisLite]{viridis}}. Accepted values are
