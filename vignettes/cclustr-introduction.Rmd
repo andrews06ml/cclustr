@@ -140,6 +140,7 @@ meaningful co-assignment matrix.
 We evaluate $k = 2, 3, 4$ clusters simultaneously.
 
 ```{r clustering}
+set.seed(202604)
 partitions <- cluster_imputations(
   imp_list   = mi_pima,
   method     = "kmeans",
