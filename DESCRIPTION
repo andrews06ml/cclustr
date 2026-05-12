@@ -35,7 +35,8 @@ Imports:
     klaR,
     clustMixType,
     proxy,
-    mclust
+    mclust,
+    utils
 Suggests:
     knitr,
     mice,
