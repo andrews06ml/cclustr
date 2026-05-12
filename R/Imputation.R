@@ -1,6 +1,3 @@
-# R/Imputation.R
-utils::globalVariables(c(".imp"))
-
 #' Standardize multiple imputation outputs into a unified list
 #'
 #' @description

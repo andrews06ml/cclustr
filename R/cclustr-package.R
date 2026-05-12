@@ -32,12 +32,12 @@
 #' }
 #'
 #' @author
-#' \strong{Maintainer}: Anhuar Duran Mendoza \email{aduranm@@unbosque.edu.co}
+#' \strong{Maintainer}: Andres Montenegro Lemus \email{andresfemole@@gmail.com}
 #'
 #' Authors:
 #' \itemize{
-#'   \item Andres Montenegro Lemus \email{afmontenegro@@unbosque.edu.co}
-#'   \item Mario Pacheco Lopez \email{mpachecol@@unbosque.edu.co}
+#'   \item Anhuar Duran Mendoza \email{asteyduran15@@gmail.com}
+#'   \item Mario Pacheco Lopez \email{mariopachecolopez@@gmail.com}
 #' }
 #'
 #' @references
