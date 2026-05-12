@@ -311,7 +311,7 @@ choose_best_clustering <- function(validation_table,
     if (!is.null(consensus_results[[key]])) {
       best_obj <- consensus_results[[key]]
     } else {
-      hit <- which(sapply(consensus_results, function(z) !is.null(z$k) && z$k == best_k))
+      hit <- which(vapply(consensus_results, function(z) !is.null(z$k) && z$k == best_k, logical(1)))
       if (length(hit) == 1) best_obj <- consensus_results[[hit]]
     }
   }

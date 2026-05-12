@@ -151,7 +151,7 @@ plot_consensus_matrix <- function(consensus_result,
     stop("'viridis_option' must be one of 'A', 'B', 'C', 'D', 'E', 'F', 'G', or 'H'.")
 
   # Render the heatmap using image()
-  graphics::image(1:nrow(M_ord), 1:ncol(M_ord), t(M_ord[nrow(M_ord):1, ]),
+  graphics::image(seq_len(nrow(M_ord)), seq_len(ncol(M_ord)), t(M_ord[rev(seq_len(nrow(M_ord))), ]),
                   col  = viridisLite::viridis(100, option = viridis_option),
                   axes = FALSE,
                   xlab = "Observations",

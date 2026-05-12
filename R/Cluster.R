@@ -302,9 +302,9 @@ cluster_imputations <- function(imp_list,
 
   .detect_types <- function(df) {
     list(
-      numeric = sapply(df, is.numeric),
-      factor  = sapply(df, is.factor),
-      binary  = sapply(df, function(x) length(unique(stats::na.omit(x))) <= 2)
+      numeric = vapply(df, is.numeric, logical(1)),
+      factor  = vapply(df, is.factor, logical(1)),
+      binary  = vapply(df, function(x) length(unique(stats::na.omit(x))) <= 2, logical(1))
     )
   }
 
@@ -421,7 +421,7 @@ cluster_imputations <- function(imp_list,
 
     # Pooled mean and SD without stacking (combinatorial variance formula)
     # This avoids creating a large stacked object in memory.
-    imp_ns    <- sapply(imp_list, nrow)
+    imp_ns    <- vapply(imp_list, nrow, integer(1))
     imp_means <- lapply(imp_list,
                         function(df) colMeans(df[, num_cols, drop = FALSE]))
     imp_vars  <- lapply(imp_list,

@@ -113,7 +113,7 @@ plot_consensus_dendrogram <- function(consensus_result,
   # Detect if multiple k (list of lists)
   # --------------------------------------------------------
   is_multi_k <- is.list(consensus_result) &&
-    all(sapply(consensus_result, function(x) is.list(x) && !is.null(x$hclust)))
+    all(vapply(consensus_result, function(x) is.list(x) && !is.null(x$hclust), logical(1)))
 
   # --------------------------------------------------------
   # k: Available options

@@ -164,7 +164,7 @@ consensus_clustering <- function(partitions,
   # Case A: list of vectors  -> single k
   # Case B: list of lists    -> multiple k (output of cluster_imputations when k is a range)
   # --------------------------------------------------------
-  is_list_of_lists <- all(sapply(partitions, is.list))
+  is_list_of_lists <- all(vapply(partitions, is.list, logical(1)))
 
   # --------------------------------------------------------
   # Helper: run consensus for a single k (core logic)
@@ -191,7 +191,7 @@ consensus_clustering <- function(partitions,
     if (n == 0) stop("Partitions contain empty vectors.")
 
     # Consistency check: all partitions must have same length
-    if (!all(sapply(partitions_k, length) == n)) {
+    if (!all(vapply(partitions_k, length, integer(1)) == n)) {
       stop("All partitions must have the same length.")
     }
 
@@ -235,7 +235,7 @@ consensus_clustering <- function(partitions,
       }
 
       # Centrality score: mean ARI vs others (exclude self)
-      centrality <- sapply(seq_len(m), function(i) mean(ari_mat[i, -i], na.rm = TRUE))
+      centrality <- vapply(seq_len(m), function(i) mean(ari_mat[i, -i], na.rm = TRUE), numeric(1))
       centrality <- pmax(centrality, 0) # no negative weights
 
       if (all(centrality == 0)) {

@@ -192,8 +192,8 @@ validate_clustering <- function(partitions,
     m <- length(parts_list)
     if (m < 2) return(NA_real_)
     ari_vals <- c()
-    for (i in 1:(m - 1)) {
-      for (j in (i + 1):m) {
+    for (i in seq_len(m - 1)) {
+      for (j in seq.int(i + 1, m)) {
         ari_vals <- c(ari_vals,
                       mclust::adjustedRandIndex(parts_list[[i]], parts_list[[j]]))
       }
@@ -202,12 +202,12 @@ validate_clustering <- function(partitions,
   }
 
   .ari_consensus_mean <- function(consensus, parts_list) {
-    vals <- sapply(parts_list, function(z) {
+    vals <- vapply(parts_list, function(z) {
       if (length(unique(z)) < 2 || length(unique(consensus)) < 2) {
         return(NA_real_)
       }
       mclust::adjustedRandIndex(consensus, z)
-    })
+    }, numeric(1))
     mean(vals, na.rm = TRUE)
   }
 
@@ -257,9 +257,9 @@ validate_clustering <- function(partitions,
     d_med <- diss[medoid, medoid, drop = FALSE]
 
     Rmax <- rep(NA_real_, k)
-    for (i in 1:k) {
+    for (i in seq_len(k)) {
       ratios <- rep(NA_real_, k)
-      for (j in 1:k) {
+      for (j in seq_len(k)) {
         if (j == i) next
         denom <- d_med[i, j]
         if (!is.na(denom) && denom > 0) {
@@ -324,10 +324,10 @@ validate_clustering <- function(partitions,
   # Single-k vs Multi-k
   # --------------------------------------------------------
 
-  is_multi_k <- all(sapply(partitions, is.list))
+  is_multi_k <- all(vapply(partitions, is.list, logical(1)))
 
   if (!is_multi_k) {
-    if (!all(sapply(partitions, is.atomic))) {
+    if (!all(vapply(partitions, is.atomic, logical(1)))) {
       stop("For single-k input, partitions must be a list of atomic vectors.")
     }
     return(.one_k(partitions, consensus_results))

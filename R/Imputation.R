@@ -167,7 +167,7 @@ as_mild_list <- function(x) {
   # Each element must be a completed dataset
   else if (is.list(x)) {
 
-    if (!all(sapply(x, is.data.frame))) {
+    if (!all(vapply(x, is.data.frame, logical(1)))) {
       stop("The input list must contain only data.frames.")
     }
 
@@ -195,18 +195,18 @@ as_mild_list <- function(x) {
   # Final consistency checks
   #-------------------------------------------------------
   # All imputations must have the same number of rows
-  if (length(unique(sapply(imp_list, nrow))) != 1) {
+  if (length(unique(vapply(imp_list, nrow, integer(1)))) != 1) {
     stop("All imputations must have the same number of rows.")
   }
 
   # All imputations must have the same number of columns
-  if (length(unique(sapply(imp_list, ncol))) != 1) {
+  if (length(unique(vapply(imp_list, ncol, integer(1)))) != 1) {
     stop("All imputations must have the same number of columns.")
   }
 
   # All imputations must have identical column names
   ref_names <- names(imp_list[[1]])
-  if (!all(sapply(imp_list, function(df) identical(names(df), ref_names)))) {
+  if (!all(vapply(imp_list, function(df) identical(names(df), ref_names), logical(1)))) {
     stop("All imputations must have identical column names.")
   }
 
@@ -238,10 +238,10 @@ as_mild_list <- function(x) {
 
     # 4) Check columns with the same values
     same_cols <- names(df)[
-      sapply(names(df), function(nm) {
+      vapply(names(df), function(nm) {
         col <- df[[nm]]
         is.numeric(col) && length(unique(col)) == 1
-      })
+      }, logical(1))
     ]
     if (length(same_cols) > 0) {
       const_vals <- sapply(same_cols, function(nm) unique(df[[nm]]))
