@@ -34,10 +34,10 @@ Imports:
     viridisLite,
     klaR,
     clustMixType,
-    proxy
+    proxy,
+    mclust
 Suggests:
     knitr,
-    mclust,
     mice,
     mlbench,
     rmarkdown
