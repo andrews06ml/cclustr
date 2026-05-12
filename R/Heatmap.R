@@ -159,10 +159,14 @@ plot_consensus_matrix <- function(consensus_result,
                   main = paste("Consensus matrix (k =", consensus_result$k, ")"))
 
   if (show_labels) {
-    # Restaurar ejes para poder dibujarlos con axis()
+    # Restore axes to draw them with axis()
     graphics::par(xaxt = "s", yaxt = "s")
     graphics::axis(1, at = seq_len(nrow(M_ord)), labels = ord,      las = 2, cex.axis = 0.4)
     graphics::axis(2, at = seq_len(ncol(M_ord)), labels = rev(ord), las = 2, cex.axis = 0.4)
+  } else {
+    # Draw axes without any tick marks or labels for a clean appearance
+    graphics::axis(1, at = seq_len(nrow(M_ord)), labels = FALSE, tick = FALSE)
+    graphics::axis(2, at = seq_len(ncol(M_ord)), labels = FALSE, tick = FALSE)
   }
 
   graphics::box()
