@@ -290,7 +290,7 @@ plot_consensus_matrix(
   consensus_result = best,
   reorder          = TRUE,
   viridis_option   = "D",
-  show_labels = TRUE
+  show_labels = FALSE
 )
 ```
 
