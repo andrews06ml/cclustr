@@ -147,6 +147,7 @@
 #' # ------------------------------------------------------------
 #' if (requireNamespace("mice", quietly = TRUE)) {
 #'
+#' set.seed(123)
 #' imp   <- mice::mice(mice::nhanes, m = 5, printFlag = FALSE)
 #' mild  <- as_mild_list(imp)
 #' parts <- cluster_imputations(mild, method = "ward.D2", k = 2:5)

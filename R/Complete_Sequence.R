@@ -174,6 +174,7 @@
 #' # ------------------------------------------------------------
 #'if (requireNamespace("mice", quietly = TRUE)) {
 #'
+#' set.seed(123)
 #' imp <- mice::mice(mice::nhanes, m = 5, printFlag = FALSE)
 #'
 #' # Single k
