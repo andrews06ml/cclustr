@@ -63,7 +63,7 @@ iteratively and manage the graphics layout externally via
 # ------------------------------------------------------------
 # Example 1: consensus dendrogram with simulated results
 # ------------------------------------------------------------
-
+set.seed(123)
 hc <- hclust(dist(matrix(rnorm(60), nrow = 20)), method = "ward.D2")
 cons <- list(hclust = hc, k = 3)
 
@@ -77,6 +77,7 @@ plot_consensus_dendrogram(cons, rect = FALSE)
 
 if (requireNamespace("mice", quietly = TRUE)) {
 
+set.seed(123)
 imp    <- mice::mice(mice::nhanes, m = 5, printFlag = FALSE)
 mild   <- as_mild_list(imp)
 parts  <- cluster_imputations(mild, method = "ward.D2", k = 3)

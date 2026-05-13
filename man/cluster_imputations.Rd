@@ -197,6 +197,7 @@ str(res_multi)
 # ------------------------------------------------------------
 # Example 2: Mixed data, PAM with Gower distance
 # ------------------------------------------------------------
+set.seed(123)
 imp_mixed <- replicate(3, {
   data.frame(
     x    = rnorm(20),
@@ -211,6 +212,7 @@ str(res_pam)
 # ------------------------------------------------------------
 # Example 3: Binary data, Jaccard distance
 # ------------------------------------------------------------
+set.seed(123)
 imp_bin <- replicate(3, {
   data.frame(
     a = sample(0:1, 20, replace = TRUE),
@@ -235,7 +237,7 @@ if (requireNamespace("mice", quietly = TRUE)) {
   df_pre$age   <- factor(df_pre$age)
   df_pre$hyp   <- factor(df_pre$hyp)
 
-  imp  <- mice::mice(df_pre, m = 3, printFlag = FALSE)
+  imp  <- mice::mice(df_pre, m = 3, printFlag = FALSE, seed = 123)
   mild <- as_mild_list(imp)
 
   # PAM + Gower with global range normalization
