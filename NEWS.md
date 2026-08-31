@@ -1,3 +1,12 @@
+# cclustr 0.1.2
+
+## Maintenance
+
+* Updated the package vignette to use the `SynthDiabetes2` dataset from
+  `mlbench` (>= 2.1-11), replacing `PimaIndiansDiabetes2`, which was
+  removed from `mlbench` and is no longer available. Added
+  `mlbench (>= 2.1-11)` to `Suggests` in DESCRIPTION.
+
 # cclustr 0.1.1
 
 * Initial release on CRAN.
@@ -18,3 +27,4 @@
 * `plot_consensus_matrix()`: heatmap of the co-assignment matrix.
 * `plot_consensus_dendrogram()`: dendrogram of the consensus solution.
 * `plot_validation_metrics()`: multi-panel plot of validation metrics.
+

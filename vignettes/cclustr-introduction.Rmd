@@ -48,13 +48,11 @@ wrapper `run_mi_clustering()`.
 
 ---
 
-## Dataset: Pima Indians Diabetes
+## Dataset: SynthDiabetes2
 
-We use the **Pima Indians Diabetes Database** (`PimaIndiansDiabetes2`) from
-the `mlbench` package, which contains clinical measurements for 768 women of
-Pima Indian heritage. The dataset presents **652 missing values** distributed
-across several variables, strongly motivating the use of multiple imputation
-before clustering.
+We use the **SynthDiabetes2 Database** (`SynthDiabetes2`) from
+the `mlbench` package (version 2.1-11 or later), a synthetic diabetes case study with 768 observations.
+Every value in the data is synthetic and no row corresponds to a real person; the dataset was generated using sequential robust synthesis with a random-forest backend, with the missingness pattern treated as a structural variable so that it mimics the pattern of missing values found in the original clinical study it is modeled on. The dataset presents **709 missing values** distributed across several variables, strongly motivating the use of multiple imputation before clustering.
 
 ### Variables
 
@@ -80,15 +78,16 @@ before clustering.
 library(cclustr)
 library(mice)
 
-if (!requireNamespace("mlbench", quietly = TRUE)) {
-  stop("Package 'mlbench' is required for this vignette. ",
+if (!requireNamespace("mlbench", quietly = TRUE) ||
+    packageVersion("mlbench") < "2.1-11") {
+  stop("Package 'mlbench' (>= 2.1-11) is required for this vignette. ",
        "Install it with: install.packages('mlbench')")
 }
 
-data("PimaIndiansDiabetes2", package = "mlbench")
+data("SynthDiabetes2", package = "mlbench")
 
 # Remove diabetes from the clustering dataset
-df <- PimaIndiansDiabetes2[, -9]
+df <- SynthDiabetes2[, -9]
 
 cat("Dimensions:", nrow(df), "x", ncol(df), "\n")
 cat("\nMissing values per variable:\n")
@@ -97,8 +96,8 @@ cat("\nTotal missing values:", sum(is.na(df)),
     "(", round(mean(is.na(df)) * 100, 1), "%)\n")
 ```
 
-The high proportion of missing values — particularly in `insulin` (48.7%) and
-`triceps` (29.6%) — makes this dataset a compelling real-world case study for
+The high proportion of missing values — particularly in `insulin` (52.7%) and
+`triceps` (32.6%) — makes this dataset a compelling real-world case study for
 multiple-imputation clustering.
 
 ---
@@ -114,12 +113,12 @@ We generate 20 imputed datasets using `mice` with predictive mean matching
 imp <- mice(df, m = 20, maxit = 20, method = "pmm", printFlag = FALSE, seed = 202604)
 
 # Convert to cclustr standard format
-mi_pima <- as_mild_list(imp)
+mi_synth <- as_mild_list(imp)
 
-cat("Number of imputed datasets :", length(mi_pima), "\n")
-cat("Dimensions of each dataset :", nrow(mi_pima[[1]]),
-    "x", ncol(mi_pima[[1]]), "\n")
-cat("Any missing values remaining:", any(sapply(mi_pima, anyNA)), "\n")
+cat("Number of imputed datasets :", length(mi_synth), "\n")
+cat("Dimensions of each dataset :", nrow(mi_synth[[1]]),
+    "x", ncol(mi_synth[[1]]), "\n")
+cat("Any missing values remaining:", any(sapply(mi_synth, anyNA)), "\n")
 ```
 
 `as_mild_list()` performs strict consistency checks across all imputed
@@ -142,7 +141,7 @@ We evaluate $k = 2, 3, 4$ clusters simultaneously.
 ```{r clustering}
 set.seed(202604)
 partitions <- cluster_imputations(
-  imp_list   = mi_pima,
+  imp_list   = mi_synth,
   method     = "kmeans",
   k          = 2:4,
   scale_data = "global"
@@ -316,8 +315,8 @@ plot_consensus_dendrogram(
 We attach the consensus labels to the first imputed dataset for a descriptive summary of each cluster's clinical profile.
 
 ```{r cluster-summary}
-pima_clustered          <- mi_pima[[1]]
-pima_clustered$cluster  <- factor(best$best_consensus)
+synth_clustered          <- mi_synth[[1]]
+synth_clustered$cluster  <- factor(best$best_consensus)
 
 # Mean values per cluster
 num_vars <- c("pregnant", "glucose", "pressure",
@@ -326,8 +325,8 @@ num_vars <- c("pregnant", "glucose", "pressure",
 cat("Mean clinical values by cluster:\n")
 print(
   aggregate(
-    pima_clustered[, num_vars],
-    by  = list(Cluster = pima_clustered$cluster),
+    synth_clustered[, num_vars],
+    by  = list(Cluster = synth_clustered$cluster),
     FUN = function(x) round(mean(x, na.rm = TRUE), 2)
   )
 )
@@ -340,7 +339,7 @@ par(mfrow = c(1, 3), mar = c(4, 4, 3, 1))
 
 boxplot(
   glucose ~ cluster,
-  data = pima_clustered,
+  data = synth_clustered,
   main = "Plasma Glucose by Cluster",
   xlab = "Cluster",
   ylab = "Glucose (mg/dl)",
@@ -349,7 +348,7 @@ boxplot(
 
 boxplot(
   mass ~ cluster,
-  data = pima_clustered,
+  data = synth_clustered,
   main = "Body Mass Index by Cluster",
   xlab = "Cluster",
   ylab = "BMI (kg/m²)",
@@ -358,7 +357,7 @@ boxplot(
 
 boxplot(
   insulin ~ cluster,
-  data = pima_clustered,
+  data = synth_clustered,
   main = "Insulin",
   xlab = "Cluster",
   ylab = "Insulin (mu U/ml)",
